@@ -91,7 +91,7 @@
 %                  way.  This command will be renewed inside every
 %                  song.
 %%%
-\newcommand{\RelDate}{31~August,~2003}
+\newcommand{\RelDate}{31~December,~2025}
 \newcommand{\RevDate}{\today}
 
 %%%
@@ -189,6 +189,10 @@
 \makeKeyIndex           %% Index of song by key.
 \makeArtistIndex	%% Index of song by artist.
 
+\newcommand{\WBColBrk}{%
+  \ifWordBk%
+    \newpage%
+  \fi}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -204,6 +208,10 @@
 %%%
 \maketitle
 
+% \newpage
+%   \section*{Title Index}
+% \input{sample-sb.tdx}
+
 \mainmatter
 \ifWordBk
   \twocolumn
@@ -212,56 +220,56 @@
 %%%
 % Songbook begins.
 %%%
-\begin{song}{Nothing But The Blood}{D}
-  {\SBPubDom}
-  {Robert Lowry}
-  {Ephesians~1:7}
-  {\NotCCLIed}
+% \begin{song}{Nothing But The Blood}{D}
+%   {\SBPubDom}
+%   {Robert Lowry}
+%   {Ephesians~1:7}
+%   {\NotCCLIed}
 
-  \renewcommand{\RevDate}{February~11,~1993}
-  \SBRef{Hosanna! Music Book~I}{\#65}
-  \FLineIdx{What can wash away my sin}
+%   \renewcommand{\RevDate}{February~11,~1993}
+%   \SBRef{Hosanna! Music Book~I}{\#65}
+%   \FLineIdx{What can wash away my sin}
 
-  \begin{SBVerse}
-    \Ch{D}{What} can wash a\Ch{F#m}{way} my \Ch{Bm}{sin?}
+%   \begin{SBVerse}
+%     \Ch{D}{What} can wash a\Ch{F#m}{way} my \Ch{Bm}{sin?}
 
-    \Ch{G}{Noth}ing but the \Ch{D}{blood} of \Chr{A7}{Je}\Ch{D}{sus.}
+%     \Ch{G}{Noth}ing but the \Ch{D}{blood} of \Chr{A7}{Je}\Ch{D}{sus.}
 
-    \Ch{D}{What} can make me \Ch{F#m}{whole} a\Ch{Bm}{gain?}
+%     \Ch{D}{What} can make me \Ch{F#m}{whole} a\Ch{Bm}{gain?}
 
-    \Ch{G}{Noth}ing but the \Ch{D}{blood} of \Chr{A7}{Je}\Ch{D}{sus.}
-  \end{SBVerse}
+%     \Ch{G}{Noth}ing but the \Ch{D}{blood} of \Chr{A7}{Je}\Ch{D}{sus.}
+%   \end{SBVerse}
 
-  \begin{SBOpGroup}
-    \Ch{D}{Oh,} Precious \Ch{F#m}{is} the \Ch{Bm}{flow}
+%   \begin{SBOpGroup}
+%     \Ch{D}{Oh,} Precious \Ch{F#m}{is} the \Ch{Bm}{flow}
   
-    \Ch{G}{That} \Ch{Em}{makes} me \Ch{A}{white} as \Ch{D}{snow.}\Ch{A7}{}
+%     \Ch{G}{That} \Ch{Em}{makes} me \Ch{A}{white} as \Ch{D}{snow.}\Ch{A7}{}
     
-    \Ch{D}{No} other \Ch{F#m}{fount} I \Ch{Bm}{know,}
+%     \Ch{D}{No} other \Ch{F#m}{fount} I \Ch{Bm}{know,}
     
-    \Ch{G}{Noth}ing but the \Ch{D}{blood} of \Chr{A7}{Je}\Ch{D}{sus.}
-  \end{SBOpGroup}
+%     \Ch{G}{Noth}ing but the \Ch{D}{blood} of \Chr{A7}{Je}\Ch{D}{sus.}
+%   \end{SBOpGroup}
 
-  \begin{SBVerse}
-    \Ch{D}{This} is all my \Ch{F#m}{righteous}\Ch{Bm}{ness,}
+%   \begin{SBVerse}
+%     \Ch{D}{This} is all my \Ch{F#m}{righteous}\Ch{Bm}{ness,}
 
-    \Ch{G}{Noth}ing but the \Ch{D}{blood} of \Chr{A7}{Je}\Ch{D}{sus.}
+%     \Ch{G}{Noth}ing but the \Ch{D}{blood} of \Chr{A7}{Je}\Ch{D}{sus.}
 
-    \Ch{D}{This} is all my \Ch{F#m}{hope} and \Ch{Bm}{peace,}
+%     \Ch{D}{This} is all my \Ch{F#m}{hope} and \Ch{Bm}{peace,}
 
-    \Ch{G}{Noth}ing but the \Ch{D}{blood} of \Chr{A7}{Je}\Ch{D}{sus.}
-  \end{SBVerse}
+%     \Ch{G}{Noth}ing but the \Ch{D}{blood} of \Chr{A7}{Je}\Ch{D}{sus.}
+%   \end{SBVerse}
 
-    \begin{SBVerse}
-    \Ch{D}{This} is all my \Ch{F#m}{righteous}\Ch{Bm}{ness,}
+%     \begin{SBVerse}
+%     \Ch{D}{This} is all my \Ch{F#m}{righteous}\Ch{Bm}{ness,}
 
-    \Ch{G}{Noth}ing but the \Ch{D}{blood} of \Chr{A7}{Je}\Ch{D}{sus.}
+%     \Ch{G}{Noth}ing but the \Ch{D}{blood} of \Chr{A7}{Je}\Ch{D}{sus.}
 
-    \Ch{D}{This} is all my \Ch{F#m}{hope} and \Ch{Bm}{peace,}
+%     \Ch{D}{This} is all my \Ch{F#m}{hope} and \Ch{Bm}{peace,}
 
-    \Ch{G}{Noth}ing but the \Ch{D}{blood} of \Chr{A7}{Je}\Ch{D}{sus.}
-  \end{SBVerse}
-\end{song}
+%     \Ch{G}{Noth}ing but the \Ch{D}{blood} of \Chr{A7}{Je}\Ch{D}{sus.}
+%   \end{SBVerse}
+% \end{song}
 
 \begin{song}{Dear Savior, Thou art mine}{D}
   {}
@@ -271,7 +279,6 @@
 
   \renewcommand{\RevDate}{February~11,~1993}
   \SBRef{Hosanna! Music Book~I}{\#65}
-  \FLineIdx{What can wash away my sin}
 
   \begin{SBVerse}
     Dear Savior, Thou art mine,
@@ -312,6 +319,1691 @@ So let me call Thee mine.
 I cannot doubt Thy word,
 I know that I am Thine.
   \end{SBVerse}
+\end{song}
+
+
+\begin{song}{A Mind At Perfect Peace With God}{G}
+  {\SBPubDom}
+  {Horatius Bonar}
+  {}
+  {}
+
+  \begin{SBVerse}
+    A mind at perfect peace with God;
+
+    O what a word is this!
+
+    A sinner reconciled through blood;
+
+    This, this indeed is peace.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    By nature and by practice far,
+
+    How very far from God;
+
+    Yet now by grace brought nigh to Him,
+
+    Through faith in Jesus' blood.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    So nigh, so very nigh to God,
+
+    I cannot nearer be;
+
+    For in the person of His Son
+
+    I am as near as He.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    So dear, so very dear to God,
+
+    More dear I cannot be;
+
+    The love wherewith He loves the Son,
+
+    Such is His love to me.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Why should I ever anxious be,
+
+    Since such a God is mine?
+
+    He watches o'er me night and day,
+
+    And tells me ``Mine is thine.''
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{He Hideth My Soul}{}
+  {\SBPubDom}
+  {Fanny Crosby}
+  {}
+  {}
+
+  \begin{SBVerse}
+    A wonderful Savior is Jesus my Lord,
+
+    A wonderful Savior to me;
+
+    He hideth my soul in the cleft of the rock,
+
+    Where rivers of pleasure I see.
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    He hideth my soul in the cleft of the rock
+
+    That shadows a dry, thirsty land;
+
+    He hideth my life in the depths of His love,
+
+    And covers me there with His hand,
+
+    And covers me there with His hand.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    A wonderful Savior is Jesus my Lord,
+
+    He taketh my burden away;
+
+    He holdeth me up and I shall not be moved,
+
+    He giveth me strength as my day.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    With numberless blessings each moment He crowns,
+
+    And, filled with His fulness divine,
+
+    I sing in my rapture, oh, glory to God,
+
+    For such a Redeemer as mine!
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    When clothed in His brightness, transported I rise
+
+    To meet Him in clouds of the sky,
+
+    His perfect salvation, His wonderful love,
+
+    I'll shout with the millions on high.
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{Redemption Ground}{}
+  {\SBPubDom}
+  {}
+  {}
+  {}
+
+  \begin{SBVerse}
+    Come sing, my soul, and praise the Lord,
+
+    Who hath redeemed thee by His blood;
+
+    Delivered thee from chains that bound,
+
+    And brought thee to redemption ground.
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    Redemption ground, the ground of peace!
+
+    Redemption ground, O wondrous grace!
+
+    Here let our praise to God abound!
+
+    Who saves us on redemption ground.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    Once from my God I wandered far,
+
+    And with His holy will made war;
+
+    But now my songs to God abound;
+
+    I'm standing on redemption ground.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    O joyous hour! when God to me
+
+    A vision gave of Calvary;
+
+    My bonds were loos'd---my soul unbound,
+
+    I sang upon redemption ground.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    No works of merit now I plead,
+
+    But Jesus take, for all my need;
+
+    No righteousness in me is found,
+
+    Except upon redemption ground.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Come, weary soul, and here find rest;
+
+    Accept redemption, and be blest:
+
+    The Christ who died, by God is crowned
+
+    To pardon on redemption ground.
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{Day By Day}{}
+  {\SBPubDom}
+  {Lina Sandell}
+  {}
+  {}
+
+  \begin{SBVerse}
+    Day by day, and with each passing moment,
+
+    Strength I find to meet my trials here;
+
+    Trusting in my Father's wise bestowment,
+
+    I've no cause for worry or for fear.
+
+    He, whose heart is kind beyond all measure,
+
+    Gives unto each day what He deems best,
+
+    Lovingly its part of pain and pleasure,
+
+    Mingling toil with peace and rest.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Every day the Lord Himself is near me,
+
+    With a special mercy for each hour;
+
+    All my cares He fain would bear and cheer me,
+
+    He whose name is Counsellor and Pow'r.
+
+    The protection of His child and treasure
+
+    Is a charge that on Himself He laid;
+
+    ``As thy days, thy strength shall be in measure,''
+
+    This the pledge to me He made.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Help me then, in every tribulation,
+
+    So to trust Thy promises, O Lord,
+
+    That I lose not faith's sweet consolation,
+
+    Offered me within Thy holy Word.
+
+    Help me, Lord, when toil and trouble meeting,
+
+    E'er to take, as from a father's hand,
+
+    One by one, the days, the moments fleeting,
+
+    Till with Christ the Lord I stand.
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{That Man Of Calvary}{}
+  {\SBPubDom}
+  {}
+  {}
+  {}
+
+  \begin{SBVerse}
+    Fairest of all the earth beside,
+
+    Chiefest of all unto Thy bride,
+
+    Fulness divine in Thee I see;
+
+    Beautiful Man of Calvary!
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    That Man who died on Calvary
+
+    Has cleansed my heart and set me free;
+
+    Sin's power no more can fetter me
+
+    Since Jesus died on Calvary.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    Drinking a dire and dreadful cup,
+
+    Crucified Jesus lifted up,
+
+    Bearing our guilt and misery;
+
+    Sorrowful Man of Calvary!
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Granting the sinner life and peace,
+
+    Granting the captive sweet release,
+
+    Shedding His blood to make us free;
+
+    Merciful Man of Calvary!
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Gather'd with Thee eternally,
+
+    Sharing Thy love by glassy sea,
+
+    Like Thee forever I shall be;
+
+    Glorified Man of Calvary!
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{Draw Me Nearer}{}
+  {\SBPubDom}
+  {Fanny Crosby}
+  {}
+  {}
+
+  \begin{SBVerse}
+    I am Thine, O Lord, I have heard Thy voice,
+
+    And it told Thy love to me;
+
+    But I long to rise in the arms of faith,
+
+    And be closer drawn to Thee.
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    Draw me nearer, nearer, blessed Lord,
+
+    To the cross where Thou hast died;
+
+    Draw me nearer, nearer, nearer, blessed Lord,
+
+    To Thy precious, bleeding side.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    Consecrate me now to Thy service, Lord,
+
+    By the pow'r of grace divine;
+
+    Let my soul look up with a steadfast hope,
+
+    And my will be lost in Thine.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    O the pure delight of a single hour
+
+    That before Thy throne I spend,
+
+    When I kneel in prayer, and with Thee, my God,
+
+    I commune as friend with friend!
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    There are depths of love that I cannot know
+
+    Till I cross the narrow sea;
+
+    There are heights of joy that I may not reach
+    
+    Till I rest in peace with Thee. 
+  \end{SBVerse}
+\end{song}
+
+\WBColBrk
+
+\begin{song}{I Heard The Voice Of Jesus Say}{}
+  {\SBPubDom}
+  {Horatius Bonar}
+  {}
+  {}
+
+  \begin{SBVerse}
+    I heard the voice of Jesus say,
+
+    ``Come unto Me and rest;
+
+    Lay down, O weary one, lay down
+
+    Thy head upon My breast.''
+
+    I came to Jesus as I was,
+
+    Weary, and worn, and sad;
+
+    I found in Him a resting-place,
+
+    And He has made me glad.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    I heard the voice of Jesus say,
+
+    ``Behold, I freely give
+
+    The living water; thirsty one,
+
+    Stoop down, and drink, and live.''
+
+    I came to Jesus, and I drank
+
+    Of that life-giving stream;
+
+    My thirst was quench'd, my soul revived,
+
+    And now I live in Him.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    I heard the voice of Jesus say,
+
+    ``I am this dark world's Light;
+
+    Look unto Me, your morn shall rise,
+
+    And all your day be bright.''
+
+    I looked to Jesus, and I found
+
+    In Him my Star, my Sun;
+
+    And in that Light of life I'll walk,
+
+    Till trav'ling days are done.
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{In The Garden}{}
+  {\SBPubDom}
+  {C. Austin Miles}
+  {}
+  {}
+
+  \begin{SBVerse}
+    I come to the garden alone,
+
+    While the dew is still on the roses;
+
+    And the voice I hear, falling on my ear,
+
+    The Son of God discloses.
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    And He walks with me, and He talks with me,
+
+    And He tells me I am His own,
+
+    And the joy we share as we tarry there,
+
+    None other has ever known.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    He speaks, and the sound of His voice
+
+    Is so sweet the birds hush their singing;
+
+    And the melody that He gave to me
+
+    Within my heart is ringing.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    I'd stay in the garden with Him
+
+    Tho' the night around me be falling;
+
+    But He bids me go; thro' the voice of woe,
+
+    His voice to me is calling.
+  \end{SBVerse}
+\end{song}
+
+% \WBPageBrk
+
+\begin{song}{I Have A Shepherd}{}
+  {\SBPubDom}
+  {}
+  {}
+  {}
+
+  \begin{SBVerse}
+    I have a Shepherd, One I love so well;
+
+    How He has blessed me tongue can never tell;
+
+    On the cross He suffered, shed His blood and died,
+
+    That I might ever in His love confide.
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    Following Jesus, ever day by day,
+
+    Nothing can harm me when He leads the way;
+
+    Darkness or sunshine, whate'er befall---
+
+    Jesus, the Shepherd, is my All in All.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    Pastures abundant doth His hand provide,
+
+    Still waters flowing ever at my side,
+
+    Goodness and mercy follow on my track,
+
+    With such a Shepherd nothing can I lack.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    When I would wander from the path astray,
+
+    Then He will draw me back into the way;
+
+    In the darkest valley I need fear no ill,
+
+    For He, my Shepherd, will be with me still.
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{I Need Thee Every Hour}{}
+  {\SBPubDom}
+  {Annie S. Hawks}
+  {}
+  {}
+
+  \begin{SBVerse}
+    I need Thee ev'ry hour,
+
+    Most gracious Lord;
+
+    No tender voice like Thine
+
+    Can peace afford.
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    I need Thee, O I need Thee;
+
+    Ev'ry hour I need Thee;
+
+    O bless me now, my Savior,
+
+    I come to Thee.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    I need Thee ev'ry hour,
+
+    Stay Thou nearby;
+
+    Temptations lose their pow'r
+
+    When Thou art nigh.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    I need Thee ev'ry hour,
+
+    In joy or pain;
+
+    Come quickly and abide,
+
+    Or life is vain.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    I need Thee ev'ry hour,
+
+    Teach me Thy will;
+
+    And Thy rich promises
+
+    In me fulfill.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    I need Thee ev'ry hour,
+
+    Most Holy One;
+
+    O make me Thine indeed,
+
+    Thou blessed Son.
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{I Will Sing The Wondrous Story}{}
+  {\SBPubDom}
+  {Francis H. Rowley}
+  {}
+  {}
+
+  \begin{SBVerse}
+    I will sing the wondrous story
+
+    Of the Christ who died for me.
+
+    How He left His home in glory
+
+    For the cross of Calvary.
+
+    I was lost, but Jesus found me,
+
+    Found the sheep that went astray,
+
+    Threw His loving arms around me,
+
+    Drew me back into His way.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    I was bruised, but Jesus healed me;
+
+    Faint was I from many a fall;
+
+    Sight was gone, and fears possessed me,
+
+    But He freed me from them all.
+
+    Days of darkness still come o'er me,
+
+    Sorrow's paths I often tread,
+
+    But the Savior still is with me;
+
+    By His hand I'm safely led.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    He will keep me till the river
+
+    Rolls its waters at my feet;
+
+    Then He'll bear me safely over,
+
+    Where the loved ones I shall meet.
+
+    Yes, I'll sing the wondrous story
+
+    Of the Christ who died for me,
+
+    Sing it with the saints in glory,
+
+    Gathered by the crystal sea.
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{I'm Not Ashamed To Own My Lord}{}
+  {\SBPubDom}
+  {Isaac Watts}
+  {}
+  {}
+
+  \begin{SBVerse}
+    I'm not ashamed to own my Lord,
+
+    Or to defend His cause,
+
+    Maintain the honour of His Word,
+
+    The glory of His cross.
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    At the cross! at the cross! where I first saw the light,
+
+    And the burden of my heart rolled away;
+
+    It was there by faith I received my sight,
+
+    And now I am happy all the day!
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    Jesus, my God! I know His name,
+
+    His name is all my trust;
+
+    Nor will He put my soul to shame,
+
+    Nor let my hope be lost.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Firm as His throne His promise stands,
+
+    And He can well secure
+
+    What I've committed to His hands,
+
+    Till the decisive hour.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Then will He own my worthless name
+
+    Before His Father's face;
+
+    And, in the New Jerusalem,
+
+    Appoint my soul a place.
+  \end{SBVerse}
+\end{song}
+
+\WBColBrk
+
+\begin{song}{I've Found A Friend In Jesus}{}
+  {\SBPubDom}
+  {Charles W. Fry}
+  {}
+  {}
+
+  \begin{SBVerse}
+    I have found a friend in Jesus,
+
+    He's ev'rything to me,
+
+    He's the fairest of ten thousand to my soul;
+
+    The ``Lily of the Valley,'' in Him alone I see,
+
+    All I need to cleanse and make me fully whole.
+
+    In sorrow He's my comfort, in trouble He's my stay,
+
+    He tells me ev'ry care on Him to roll;
+
+    He's the ``Lily of the Valley, the Bright and Morning Star,''
+
+    He's the fairest of ten thousand to my soul.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    He all my grief has taken, and all my sorrows borne,
+
+    In temptation He's my strong and mighty tow'r;
+
+    I have all for Him forsaken, and all my idols torn
+
+    From my heart, and now He keeps me by His pow'r.
+
+    Though all the world forsake me, and Satan tempt me sore,
+
+    Through Jesus I shall safely reach the goal;
+
+    He's the ``Lily of the Valley, the Bright and Morning Star,''
+
+    He's the fairest of ten thousand to my soul.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    He will never, never leave me, nor yet forsake me here,
+
+    While I live by faith and do His blessed will;
+
+    A wall of fire about me, I've nothing now to fear,
+
+    With His manna He my hungry soul shall fill.
+
+    Then sweeping up to glory, to see His blessed face,
+
+    Where rivers of delight shall ever roll;
+
+    He's the ``Lily of the Valley, the Bright and Morning Star,''
+
+    He's the fairest of ten thousand to my soul.
+  \end{SBVerse}
+\end{song}
+
+\WBPageBrk
+
+\begin{song}{I've Wandered Far Away From God}{}
+  {\SBPubDom}
+  {William J. Kirkpatrick}
+  {}
+  {}
+
+  \begin{SBVerse}
+    I've wandered far away from God,
+
+    Now I'm coming home;
+
+    The paths of sin too long I've trod,
+
+    Lord, I'm coming home.
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    Coming home, coming home,
+
+    Nevermore to roam;
+
+    Open wide Thine arms of love;
+
+    Lord, I'm coming home.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    I've wasted many precious years,
+
+    Now I'm coming home;
+
+    I now repent with bitter tears,
+
+    Lord, I'm coming home.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    I'm tired of sin and straying, Lord,
+
+    Now I'm coming home;
+
+    I'll trust Thy love, believe Thy word;
+
+    Lord, I'm coming home.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    My soul is sick, my heart is sore,
+
+    Now I'm coming home;
+
+    My strength renew, my hope restore:
+
+    Lord, I'm coming home.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    My only hope, my only plea,
+
+    Now I'm coming home;
+
+    That Jesus died, and died for me;
+
+    Lord, I'm coming home.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    I need His cleansing blood, I know,
+
+    Now I'm coming home;
+
+    O wash me whiter than the snow;
+
+    Lord, I'm coming home.
+  \end{SBVerse}
+\end{song}
+
+\WBColBrk
+
+\begin{song}{Jesus, Keep Me Near The Cross}{}
+  {\SBPubDom}
+  {Fanny Crosby}
+  {}
+  {}
+
+  \begin{SBVerse}
+    Jesus, keep me near the cross,
+
+    There a precious fountain;
+
+    Free to all, a healing stream,
+
+    Flows from Calv'ry's mountain.
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    In the cross, in the cross
+
+    Be my glory ever,
+
+    Till my ransomed soul shall find
+
+    Rest beyond the river.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    Near the cross, a trembling soul,
+
+    Love and mercy found me;
+
+    There the Bright and Morning Star
+
+    Shed His beams around me.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Near the cross! O Lamb of God,
+
+    Bring its scenes before me;
+
+    Help me walk from day to day
+
+    With its shadow o'er me.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Near the cross! I'll watch and wait,
+
+    Hoping, trusting ever;
+
+    Till I reach the golden strand,
+
+    Just beyond the river.
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{Loved With Everlasting Love}{}
+  {\SBPubDom}
+  {George Wade Robinson}
+  {}
+  {}
+
+  \begin{SBVerse}
+    Loved with everlasting love,
+
+    Led by grace that love to know;
+
+    Spirit, breathing from above,
+
+    Thou hast taught me it is so.
+
+    Oh, this full and perfect peace!
+
+    Oh, this transport all divine!
+
+    In a love which cannot cease,
+
+    I am His, and He is mine.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Heaven above is softer blue,
+
+    Earth around is sweeter green;
+
+    Something lives in every hue
+
+    Christless eyes have never seen:
+
+    Birds with gladder songs o'erflow,
+
+    Flow'rs with deeper beauties shine,
+
+    Since I know, as now I know,
+
+    I am His, and He is mine.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Things that once were wild alarms
+
+    Cannot now disturb my rest;
+
+    Closed in everlasting arms,
+
+    Pillowed on the loving breast.
+
+    Oh, to lie forever here,
+
+    Doubt and care and self resign,
+
+    While He whispers in my ear,
+
+    I am His, and He is mine.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    His forever, only His:
+
+    Who the Lord and me shall part?
+
+    Ah, with what a rest of bliss
+
+    Christ can fill the loving heart.
+
+    Heaven and earth may fade and flee,
+
+    Firstborn light in gloom decline;
+
+    But, while God and I shall be,
+
+    I am His, and He is mine.
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{My Faith Has Found A Resting Place}{}
+  {\SBPubDom}
+  {Lidie H. Edmunds}
+  {}
+  {}
+
+  \begin{SBVerse}
+    My faith has found a resting place,
+
+    Not in device nor creed.
+
+    I trust the ever-living One;
+
+    His wounds for me shall plead.
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    I need no other argument,
+
+    I need no other plea,
+
+    It is enough that Jesus died,
+
+    And that He died for me.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    Enough for me that Jesus saves,
+
+    This ends my fear and doubt;
+
+    A sinful soul I come to Him,
+
+    He'll never cast me out.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    My heart is leaning on the Word,
+
+    The written Word of God,
+
+    Salvation by my Savior's name,
+
+    Salvation thro' His blood.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    My Great Physician heals the sick,
+
+    The lost He came to save;
+
+    For me His precious blood He shed,
+
+    For me His life He gave.
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{Nearer, Still Nearer}{}
+  {\SBPubDom}
+  {Lelia N. Morris}
+  {}
+  {}
+
+  \begin{SBVerse}
+    Nearer, still nearer---close to Thy heart,
+
+    Draw me, my Savior, so precious Thou art;
+
+    Fold me, O fold me close to Thy breast;
+
+    Shelter me safe in that Haven of Rest,
+
+    Shelter me safe in that Haven of Rest.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Nearer, still nearer---nothing I bring,
+
+    Naught as an off'ring to Jesus, my King---
+
+    Only my sinful, now contrite heart;
+
+    Grant me the cleansing Thy blood doth impart,
+
+    Grant me the cleansing Thy blood doth impart.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Nearer, still nearer---Lord, to be Thine,
+
+    Sin with its follies I gladly resign---
+
+    All of its pleasures, pomp and its pride;
+
+    Give me but Jesus, my Lord crucified,
+
+    Give me but Jesus, my Lord crucified.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Nearer, still nearer---while life shall last,
+
+    Till safe in glory my anchor is cast;
+
+    Through endless ages, ever to be
+
+    Nearer, my Savior, still nearer to Thee,
+
+    Nearer, my Savior, still nearer to Thee.
+  \end{SBVerse}
+\end{song}
+
+\WBPageBrk
+
+\begin{song}{None But Christ Can Satisfy}{}
+  {\SBPubDom}
+  {}
+  {}
+  {}
+
+  \begin{SBVerse}
+    O Christ, in Thee my soul hath found,
+
+    And found in Thee alone,
+
+    The peace, the joy I sought so long,
+
+    The bliss till now unknown.
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    Now none but Christ can satisfy,
+
+    None other name for me!
+
+    There's love and life and lasting joy,
+
+    Christ Jesus, found in Thee.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    I sighed for rest and happiness,
+
+    I yearned for them, not Thee;
+
+    But while I passed my Saviour by,
+
+    His love laid hold on me.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    I tried the broken cisterns, ah!
+
+    But how the waters failed;
+
+    Even as I stooped to drink they fled,
+
+    And mocked me as I wailed.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    The pleasures lost I sadly mourned,
+
+    But never wept for Thee,
+
+    Till grace the sightless eyes received,
+
+    Thy loveliness to see.
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{O, What A Saviour That He Died For Me}{}
+  {\SBPubDom}
+  {James McGranahan}
+  {}
+  {}
+
+  \begin{SBVerse}
+    Oh, what a Saviour that He died for me!
+
+    From condemnation He hath made me free;
+
+    ``He that believeth on the Son,'' said He,
+
+    ``Hath everlasting life.''
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    ``Verily, verily, I say unto you;
+
+    Verily, verily,'' message ever new!
+
+    ``He that believeth on the Son,'' 'tis true!
+
+    ``Hath everlasting life!''
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    All my iniquities on Him were laid,
+
+    All my indebtedness by Him was paid;
+
+    All who believe on Him, the Lord hath said,
+
+    ``Hath everlasting life.''
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Though poor and needy, I can trust my Lord;
+
+    Though weak and sinful, I believe His Word;
+
+    O glad message! Ev'ry child of God
+
+    ``Hath everlasting life.''
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Though all unworthy, yet I will not doubt;
+
+    For him that cometh He will not cast out;
+
+    ``He that believeth,'' oh, the good news shout!
+
+    ``Hath everlasting life.''
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{I'm Depending On The Blood}{}
+  {\SBPubDom}
+  {}
+  {}
+  {}
+
+  \begin{SBVerse}
+    On the golden streets of heaven all men hope to walk some day,
+
+    Yet so many are not willing to accept the living way;
+
+    But while others build on good works or opinions if they may,
+
+    Hallelujah! hallelujah! I'm depending on the blood.
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    In the soul-cleansing blood of the Saviour,
+
+    I've been wash'd in the crimson flood;
+
+    Tho' the world may say
+
+    There is hope some other way,
+
+    I'm depending on the blood.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    Some will tell us that God's mercy is their only hope and plea,
+
+    That a soul He could not punish thro'out all eternity;
+
+    But I read that my dear Saviour died for sinners just like me,
+
+    Hallelujah! hallelujah! I'm depending on the blood.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    As we look back thro' the ages where the kings and prophets trod,
+
+    We may see their altars reeking with the sacrifice and blood;
+
+    But those types were only pointing to the Paschal Lamb of God,
+
+    Hallelujah! hallelujah! I'm depending on the blood.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    'Tis the burden of that chorus over on the streets of light,
+
+    That the blood from Calv'ry's mountain hath wash'd all their garments white;
+
+    So I'll shout along life's pathway till I reach that land so bright,
+
+    Hallelujah! hallelujah! I'm depending on the blood.
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{The Crowning Day Is Coming}{}
+  {\SBPubDom}
+  {El Nathan}
+  {}
+  {}
+
+  \begin{SBVerse}
+    Our Lord is now rejected,
+
+    And by the world disowned,
+
+    By the many still neglected,
+
+    And by the few enthroned,
+
+    But soon He'll come in glory,
+
+    The hour is drawing nigh,
+
+    For the crowning day is coming by and by.
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    Oh, the crowning day is coming,
+
+    Is coming by and by,
+
+    When our Lord shall come in ``power,''
+
+    And ``glory'' from on high,
+
+    Oh, the glorious night will gladden,
+
+    Each waiting watchful eye,
+
+    In the crowning day that's coming by and by.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    The heav'ns shall glow with splendor,
+
+    But brighter far than they
+
+    The saints shall shine in glory,
+
+    As Christ shall them array,
+
+    The beauty of the Saviour,
+
+    Shall dazzle ev'ry eye,
+
+    In the crowning day that's coming by and by.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Our pain shall then be over,
+
+    We'll sin and sigh no more,
+
+    Behind us all of sorrow,
+
+    And naught but joy before,
+
+    A joy in our Redeemer,
+
+    As we to Him are nigh,
+
+    In the crowning day that's coming by and by.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Let all that look for, hasten
+
+    The coming joyful day,
+
+    By earnest consecration,
+
+    To walk the narrow way,
+
+    By gath'ring in the lost ones,
+
+    For whom our Lord did die,
+
+    For the crowning day that's coming by and by.
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{Shall We Gather At The River}{}
+  {\SBPubDom}
+  {Robert Lowry}
+  {}
+  {}
+
+  \begin{SBVerse}
+    Shall we gather at the river,
+
+    Where bright angel feet have trod;
+
+    With its crystal tide forever
+
+    Flowing by the throne of God?
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    Yes, we'll gather at the river,
+
+    The beautiful, the beautiful river;
+
+    Gather with the saints at the river
+
+    That flows by the throne of God.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    On the margin of the river,
+
+    Washing up its silver spray,
+
+    We will walk and worship ever,
+
+    All the happy golden day.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Ere we reach the shining river,
+
+    Lay we ev'ry burden down;
+
+    Grace our spirits will deliver,
+
+    And provide a robe and crown.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Soon we'll reach the shining river,
+
+    Soon our pilgrimage will cease;
+
+    Soon our happy hearts will quiver
+
+    With the melody of peace.
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{Standing On The Promises}{}
+  {\SBPubDom}
+  {Russell Kelso Carter}
+  {}
+  {}
+
+  \begin{SBVerse}
+    Standing on the promises of Christ, my King!
+
+    Through eternal ages let His praises ring.
+
+    ``Glory in the highest!'' I will shout and sing,
+
+    Standing on the promises of God.
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    Standing, standing,
+
+    Standing on the promises of God, my Savior;
+
+    Standing, standing,
+
+    I'm standing on the promises of God.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    Standing on the promises that cannot fail!
+
+    When the howling storms of doubt and fear assail,
+
+    By the living Word of God I shall prevail,
+
+    Standing on the promises of God.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Standing on the promises, I now can see
+
+    Perfect, present cleansing in the blood for me;
+
+    Standing in the liberty where Christ makes free,
+
+    Standing on the promises of God.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Standing on the promises of Christ, the Lord,
+
+    Bound to Him eternally by love's strong cord,
+
+    Overcoming daily with the Spirit's Sword,
+
+    Standing on the promises of God.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Standing on the promises I cannot fall,
+
+    List'ning ev'ry moment to the Spirit's call,
+
+    Resting in my Savior as my all in all,
+
+    Standing on the promises of God.
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{Teach Me Thy Way, O Lord}{}
+  {\SBPubDom}
+  {B. Mansell Ramsey}
+  {}
+  {}
+
+  \begin{SBVerse}
+    Teach me Thy way, O Lord; teach me Thy way!
+
+    Thy guiding grace afford; teach me Thy way!
+
+    Help me to walk aright, more by faith, less by sight;
+
+    Lead me with heav'nly light; teach me Thy way!
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    When I am sad at heart, teach me Thy way!
+
+    When earthly joys depart, teach me Thy way!
+
+    In hours of loneliness, in times of dire distress,
+
+    In failure or success, teach me Thy way!
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    When doubts and fears arise, teach me Thy way!
+
+    When storms o'erspread the skies, teach me Thy way!
+
+    Shine thro' the cloud and rain, thro' sorrow, toil, and pain;
+
+    Make Thou my pathway plain; teach me Thy way!
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Long as my life shall last, teach me Thy way!
+
+    Where'er my lot be cast, teach me Thy way!
+
+    Until the race is run, until the journey's done,
+
+    Until the crown is won, teach me Thy way!
+  \end{SBVerse}
+\end{song}
+
+
+\begin{song}{Tell Me The Old, Old Story}{}
+  {\SBPubDom}
+  {A. Catherine Hankey}
+  {}
+  {}
+
+  \begin{SBVerse}
+    Tell me the old, old story,
+
+    Of unseen things above,
+
+    Of Jesus and His glory,
+
+    Of Jesus and His love;
+
+    Tell me the story simply,
+
+    As to a little child,
+
+    For I am weak and weary,
+
+    And helpless and defiled.
+  \end{SBVerse}
+
+  \begin{SBOpGroup}
+    Tell me the old, old story,
+
+    Tell me the old, old story,
+
+    Tell me the old, old story,
+
+    Of Jesus and His love.
+  \end{SBOpGroup}
+
+  \begin{SBVerse}
+    Tell me the story slowly,
+
+    That I may take it in---
+
+    That wonderful redemption,
+
+    God's remedy for sin;
+
+    Tell me the story often,
+
+    For I forget so soon,
+
+    The ``early dew'' of morning
+
+    Has passed away at noon.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Tell me the story softly,
+
+    With earnest tones and grave;
+
+    Remember I'm the sinner
+
+    Whom Jesus came to save;
+
+    Tell me the story always,
+
+    If you would really be,
+
+    In any time of trouble,
+
+    A comforter to me.
+  \end{SBVerse}
+
+  \begin{SBVerse}
+    Tell me the same old story,
+
+    When you have cause to fear
+
+    That this world's empty glory
+
+    Is costing me too dear;
+
+    And when the Lord's bright glory
+
+    Is dawning on my soul,
+
+    Tell me the old, old story:
+
+    ``Christ Jesus makes thee whole.''
+  \end{SBVerse}
+\end{song}
+
+\begin{song}{What a day that will be}{}
+  {\SBPubDom}
+  {A. Catherine Hankey}
+  {}
+  {}
+
+\begin{SBVerse}
+
+
+There’s coming a day when no heartaches shall come
+
+No more clouds in the sky
+
+No more tears to dim the eye
+
+All is peace forever more
+
+On that happy golden shore
+
+What a day, glorious day that will be
+\end{SBVerse}
+  \begin{SBOpGroup}
+What a day that will be when my Jesus I shall see
+
+When I look upon His face the one who saved my by His grace
+
+When He takes me by the hand and leads me to the promised land
+
+What a day, glorious day that will be
+
+  \end{SBOpGroup}
+\begin{SBVerse}
+There will be no sorrows there
+
+And no more burdens to bear
+
+No more sickness and, no more pain
+
+No more parting over there
+
+And forever I will be with the one who died for me
+
+What a day, glorious day that will be
+\end{SBVerse}
+
 \end{song}
 
 
