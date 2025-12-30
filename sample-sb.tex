@@ -11,8 +11,8 @@
 %%
 %%      This package is free software; you can redistribute it and/or
 %%      modify it under the terms of version 2.1 of the GNU Lesser
-%%	General Public License as published by the Free Software 
-%%	Foundation.
+%%  General Public License as published by the Free Software
+%%  Foundation.
 %%
 %%      This package is distributed in the hope that it will be
 %%      useful, but WITHOUT ANY WARRANTY; without even the implied
@@ -80,7 +80,6 @@
 \usepackage[wordbk]{songbook}                 %% Words Only edition.
 %%\usepackage[overhead]{songbook}               %% Overhead Transparency edition.
 
-
 %%%
 % Revision Date and Release Date definitions.
 %
@@ -145,37 +144,37 @@
 \pagestyle{fancy}
 
 \ifChordBk
-  % It's a words & chords songbook...
-  \addtolength{\headwidth}{\marginparsep}
-  \addtolength{\headwidth}{\marginparwidth}
-  \renewcommand{\headrulewidth}{0.4pt}
-  \renewcommand{\footrulewidth}{0.4pt}
-  \fancyhead[LE,RO]{\LHeadFont\emph{\leftmark\/}\SBContinueMark}
-  \fancyhead[CE,CO]{\CHeadFont\thepage}
-  \fancyhead[RE,LO]{\RHeadFont\RelDate}
+% It's a words & chords songbook...
+\addtolength{\headwidth}{\marginparsep}
+\addtolength{\headwidth}{\marginparwidth}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\fancyhead[LE,RO]{\LHeadFont\emph{\leftmark\/}\SBContinueMark}
+\fancyhead[CE,CO]{\CHeadFont\thepage}
+\fancyhead[RE,LO]{\RHeadFont\RelDate}
 \else\ifOverhead
-  % It's an overhead...
-  \renewcommand{\footrulewidth}{0pt}
-  \renewcommand{\headrulewidth}{0pt}
-  \fancyhead[LE,RO]{}
-  \fancyhead[CE,CO]{}
-  \fancyhead[RE,LO]{}
+% It's an overhead...
+\renewcommand{\footrulewidth}{0pt}
+\renewcommand{\headrulewidth}{0pt}
+\fancyhead[LE,RO]{}
+\fancyhead[CE,CO]{}
+\fancyhead[RE,LO]{}
 \else\ifWordBk
-  % It's a words only songbook...
-  \addtolength{\headwidth}{\marginparsep}
-  \addtolength{\headwidth}{\marginparwidth}
-  \renewcommand{\headrulewidth}{0.4pt}
-  \renewcommand{\footrulewidth}{0.4pt}
-  \fancyhead[LE,RO]{\LHeadFont A Church Songbook}
-  \fancyhead[CE,CO]{\CHeadFont\thepage}
-  \fancyhead[RE,LO]{\RHeadFont\RelDate}
+% It's a words only songbook...
+\addtolength{\headwidth}{\marginparsep}
+\addtolength{\headwidth}{\marginparwidth}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\fancyhead[LE,RO]{\LHeadFont A Church Songbook}
+\fancyhead[CE,CO]{\CHeadFont\thepage}
+\fancyhead[RE,LO]{\RHeadFont\RelDate}
 \fi\fi\fi
 
 \fancyfoot[LE,RO]{\LFootFont Property of The Church}
 \ifSongEject
-  \fancyfoot[CE,CO]{\CFootFont Last Revised:  \RevDate}
+\fancyfoot[CE,CO]{\CFootFont Last Revised:  \RevDate}
 \else
-  \fancyfoot[CE,CO]{\CFootFont}
+\fancyfoot[CE,CO]{\CFootFont}
 \fi
 \fancyfoot[RE,LO]{\RFootFont Material used by permission.}
 
@@ -187,12 +186,12 @@
 \makeTitleIndex         %% Title and First Line Index.
 \makeTitleContents      %% Table of Contents.
 \makeKeyIndex           %% Index of song by key.
-\makeArtistIndex	%% Index of song by artist.
+\makeArtistIndex  %% Index of song by artist.
 
 \newcommand{\WBColBrk}{%
   \ifWordBk%
-    \newpage%
-  \fi}
+  \newpage%
+\fi}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -214,7 +213,7 @@
 
 \mainmatter
 \ifWordBk
-  \twocolumn
+\twocolumn
 \fi
 
 %%%
@@ -242,11 +241,11 @@
 
 %   \begin{SBOpGroup}
 %     \Ch{D}{Oh,} Precious \Ch{F#m}{is} the \Ch{Bm}{flow}
-  
+
 %     \Ch{G}{That} \Ch{Em}{makes} me \Ch{A}{white} as \Ch{D}{snow.}\Ch{A7}{}
-    
+
 %     \Ch{D}{No} other \Ch{F#m}{fount} I \Ch{Bm}{know,}
-    
+
 %     \Ch{G}{Noth}ing but the \Ch{D}{blood} of \Chr{A7}{Je}\Ch{D}{sus.}
 %   \end{SBOpGroup}
 
@@ -292,35 +291,34 @@
 
   \begin{SBOpGroup}
     Mine! Mine! Mine!
-I know Thou art mine;
-Savior, dear Savior,
-  I know Thou art mine.
+    I know Thou art mine;
+    Savior, dear Savior,
+    I know Thou art mine.
 
   \end{SBOpGroup}
 
   \begin{SBVerse}
     Thou art the sinner’s friend,
-So I Thy friendship claim,
-A sinner saved by grace,
-When Thy sweet message came.
+    So I Thy friendship claim,
+    A sinner saved by grace,
+    When Thy sweet message came.
   \end{SBVerse}
 
   \begin{SBVerse}
     My hardened heart was touched;
-Thy pard’ning voice I heard;
-And joy and peace came in
-While list’ning to Thy word.
+    Thy pard’ning voice I heard;
+    And joy and peace came in
+    While list’ning to Thy word.
   \end{SBVerse}
 
   \begin{SBVerse}
-    
-So let me sing Thy praise,
-So let me call Thee mine.
-I cannot doubt Thy word,
-I know that I am Thine.
+
+    So let me sing Thy praise,
+    So let me call Thee mine.
+    I cannot doubt Thy word,
+    I know that I am Thine.
   \end{SBVerse}
 \end{song}
-
 
 \begin{song}{A Mind At Perfect Peace With God}{G}
   {\SBPubDom}
@@ -378,7 +376,6 @@ I know that I am Thine.
     And tells me ``Mine is thine.''
   \end{SBVerse}
 \end{song}
-
 
 \begin{song}{He Hideth My Soul}{}
   {\SBPubDom}
@@ -438,7 +435,6 @@ I know that I am Thine.
     I'll shout with the millions on high.
   \end{SBVerse}
 \end{song}
-
 
 \begin{song}{Redemption Ground}{}
   {\SBPubDom}
@@ -507,7 +503,6 @@ I know that I am Thine.
   \end{SBVerse}
 \end{song}
 
-
 \begin{song}{Day By Day}{}
   {\SBPubDom}
   {Lina Sandell}
@@ -569,7 +564,6 @@ I know that I am Thine.
   \end{SBVerse}
 \end{song}
 
-
 \begin{song}{That Man Of Calvary}{}
   {\SBPubDom}
   {}
@@ -627,7 +621,6 @@ I know that I am Thine.
   \end{SBVerse}
 \end{song}
 
-
 \begin{song}{Draw Me Nearer}{}
   {\SBPubDom}
   {Fanny Crosby}
@@ -680,8 +673,8 @@ I know that I am Thine.
     Till I cross the narrow sea;
 
     There are heights of joy that I may not reach
-    
-    Till I rest in peace with Thee. 
+
+    Till I rest in peace with Thee.
   \end{SBVerse}
 \end{song}
 
@@ -747,7 +740,6 @@ I know that I am Thine.
     Till trav'ling days are done.
   \end{SBVerse}
 \end{song}
-
 
 \begin{song}{In The Garden}{}
   {\SBPubDom}
@@ -845,7 +837,6 @@ I know that I am Thine.
   \end{SBVerse}
 \end{song}
 
-
 \begin{song}{I Need Thee Every Hour}{}
   {\SBPubDom}
   {Annie S. Hawks}
@@ -913,7 +904,6 @@ I know that I am Thine.
   \end{SBVerse}
 \end{song}
 
-
 \begin{song}{I Will Sing The Wondrous Story}{}
   {\SBPubDom}
   {Francis H. Rowley}
@@ -974,7 +964,6 @@ I know that I am Thine.
     Gathered by the crystal sea.
   \end{SBVerse}
 \end{song}
-
 
 \begin{song}{I'm Not Ashamed To Own My Lord}{}
   {\SBPubDom}
@@ -1236,7 +1225,6 @@ I know that I am Thine.
   \end{SBVerse}
 \end{song}
 
-
 \begin{song}{Loved With Everlasting Love}{}
   {\SBPubDom}
   {George Wade Robinson}
@@ -1316,7 +1304,6 @@ I know that I am Thine.
   \end{SBVerse}
 \end{song}
 
-
 \begin{song}{My Faith Has Found A Resting Place}{}
   {\SBPubDom}
   {Lidie H. Edmunds}
@@ -1373,7 +1360,6 @@ I know that I am Thine.
     For me His life He gave.
   \end{SBVerse}
 \end{song}
-
 
 \begin{song}{Nearer, Still Nearer}{}
   {\SBPubDom}
@@ -1489,7 +1475,6 @@ I know that I am Thine.
   \end{SBVerse}
 \end{song}
 
-
 \begin{song}{O, What A Saviour That He Died For Me}{}
   {\SBPubDom}
   {James McGranahan}
@@ -1546,7 +1531,6 @@ I know that I am Thine.
     ``Hath everlasting life.''
   \end{SBVerse}
 \end{song}
-
 
 \begin{song}{I'm Depending On The Blood}{}
   {\SBPubDom}
@@ -1606,7 +1590,6 @@ I know that I am Thine.
     Hallelujah! hallelujah! I'm depending on the blood.
   \end{SBVerse}
 \end{song}
-
 
 \begin{song}{The Crowning Day Is Coming}{}
   {\SBPubDom}
@@ -1695,7 +1678,6 @@ I know that I am Thine.
   \end{SBVerse}
 \end{song}
 
-
 \begin{song}{Shall We Gather At The River}{}
   {\SBPubDom}
   {Robert Lowry}
@@ -1752,7 +1734,6 @@ I know that I am Thine.
     With the melody of peace.
   \end{SBVerse}
 \end{song}
-
 
 \begin{song}{Standing On The Promises}{}
   {\SBPubDom}
@@ -1821,7 +1802,6 @@ I know that I am Thine.
   \end{SBVerse}
 \end{song}
 
-
 \begin{song}{Teach Me Thy Way, O Lord}{}
   {\SBPubDom}
   {B. Mansell Ramsey}
@@ -1868,7 +1848,6 @@ I know that I am Thine.
     Until the crown is won, teach me Thy way!
   \end{SBVerse}
 \end{song}
-
 
 \begin{song}{Tell Me The Old, Old Story}{}
   {\SBPubDom}
@@ -1965,47 +1944,45 @@ I know that I am Thine.
   {}
   {}
 
-\begin{SBVerse}
+  \begin{SBVerse}
 
+    There’s coming a day when no heartaches shall come
 
-There’s coming a day when no heartaches shall come
+    No more clouds in the sky
 
-No more clouds in the sky
+    No more tears to dim the eye
 
-No more tears to dim the eye
+    All is peace forever more
 
-All is peace forever more
+    On that happy golden shore
 
-On that happy golden shore
-
-What a day, glorious day that will be
-\end{SBVerse}
+    What a day, glorious day that will be
+  \end{SBVerse}
   \begin{SBOpGroup}
-What a day that will be when my Jesus I shall see
+    What a day that will be when my Jesus I shall see
 
-When I look upon His face the one who saved my by His grace
+    When I look upon His face the one who saved my by His grace
 
-When He takes me by the hand and leads me to the promised land
+    When He takes me by the hand and leads me to the promised land
 
-What a day, glorious day that will be
+    What a day, glorious day that will be
 
   \end{SBOpGroup}
-\begin{SBVerse}
-There will be no sorrows there
+  \begin{SBVerse}
+    There will be no sorrows there
 
-And no more burdens to bear
+    And no more burdens to bear
 
-No more sickness and, no more pain
+    No more sickness and, no more pain
 
-No more parting over there
+    No more parting over there
 
-And forever I will be with the one who died for me
+    And forever I will be with the one who died for me
 
-What a day, glorious day that will be
-\end{SBVerse}
+    What a day, glorious day that will be
+  \end{SBVerse}
 
 \end{song}
-
 
 \end{document}
 \bye
