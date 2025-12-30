@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1767077012.84318 "/Users/timsam/Downloads/Songbook-4.3/sample-sb.tex" "sample-sb.pdf" "sample-sb" 1767077013.14251 0
-  "/Users/timsam/Downloads/Songbook-4.3/sample-sb.tex" 1767077012.68169 40715 3b1e15403a1e10384e47aa002a4236e5 ""
+["pdflatex"] 1767078152.71909 "/Users/timsam/Downloads/Songbook-4.3/sample-sb.tex" "sample-sb.pdf" "sample-sb" 1767078153.04089 0
+  "/Users/timsam/Downloads/Songbook-4.3/sample-sb.tex" 1767078152.16371 56771 098c78c3e7486f9e06d46a8a23ff7b87 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1136849721 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/jknappen/ec/tcrm0800.tfm" 1136768653 1536 05df9db6aeccc4eea94fec15c9024f79 ""
@@ -20,6 +20,7 @@
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/cm/cmtt12.tfm" 1136768653 772 9a936b7f5e2ff0557fce0f62822f0bbf ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/latex-fonts/lasy10.tfm" 1136768653 520 82a3d37183f34b6eb363a161dfc002c2 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/latex-fonts/lasy7.tfm" 1136768653 520 a74c6ed8cb48679fdc3ea874d9d34a7e ""
+  "/usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb" 1248133631 32080 340ef9bf63678554ee606688e7b5339d ""
   "/usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb" 1248133631 32722 d7379af29a190c3f453aba36302ff5a9 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb" 1248133631 32362 179c33bbf43f19adbb3825bb4e36e57a ""
   "/usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb" 1248133631 32726 0a1aea6fcd6468ee2cf64d891f5c43c8 ""
@@ -40,8 +41,9 @@
   "/usr/local/texlive/2025/texmf-var/web2c/pdftex/pdflatex.fmt" 1767070659 3345747 e3ec37111cde48b9c2cc8999566787cf ""
   "/usr/local/texlive/2025/texmf.cnf" 1741450484 577 418a7058ec8e006d8704f60ecd22c938 ""
   "conditionals.sty" 1014349345 4045 408776accc3aa8e802730c82841efc6f ""
-  "sample-sb.aux" 1767077013.11852 33 caafbda2f246531a72f60df9bc4c0d5b "pdflatex"
-  "sample-sb.tex" 1767077012.68169 40715 3b1e15403a1e10384e47aa002a4236e5 ""
+  "sample-sb.aux" 1767078153.01576 33 bdbf764baf0c139c53f5362d5edc4a6b "pdflatex"
+  "sample-sb.tdx" 1767077950.86368 1831 ff070af04434f499b9ec235d02f56665 ""
+  "sample-sb.tex" 1767078152.16371 56771 098c78c3e7486f9e06d46a8a23ff7b87 ""
   "songbook.sty" 1767070919.09687 42800 31fea6587ce10bd8ad9abfd7466e1fd2 ""
   (generated)
   "sample-sb.aIdx"
