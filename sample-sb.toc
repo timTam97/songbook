@@ -40,3 +40,54 @@
 \item\ 40. The Ninety And Nine\hbox {, 15}
 \item\ 41. O Happy Day\hbox {, 16}
 \item\ 42. What A Friend We Have In Jesus\hbox {, 16}
+\item\ 43. Christ Is Mine Forevermore\hbox {, 16}
+\item\ 44. Ancient Of Days\hbox {, 17}
+\item\ 45. I'd Rather Have Jesus\hbox {, 17}
+\item\ 46. In God's Green Pastures\hbox {, 17}
+\item\ 47. O Listen To Our Wondrous Story\hbox {, 18}
+\item\ 48. You Are My All In All\hbox {, 18}
+\item\ 49. Seek Ye First\hbox {, 18}
+\item\ 50. Before The Throne Of God Above\hbox {, 19}
+\item\ 51. The Way Of The Cross Leads Home\hbox {, 19}
+\item\ 52. O How Happy Are They\hbox {, 19}
+\item\ 53. Lord Jesus! My Savior! How Vast Thy Love To Me\hbox {, 20}
+\item\ 54. Look, Ye Saints, The Sight Is Glorious\hbox {, 20}
+\item\ 55. How Deep The Father's Love For Us\hbox {, 20}
+\item\ 56. The Sands Of Time Are Sinking\hbox {, 21}
+\item\ 57. I Owe It All To Thee\hbox {, 21}
+\item\ 58. When The Roll Is Called Up Yonder\hbox {, 21}
+\item\ 59. Because He Lives\hbox {, 22}
+\item\ 60. As The Deer\hbox {, 22}
+\item\ 61. Turn Your Eyes Upon Jesus\hbox {, 23}
+\item\ 62. It Is Well With My Soul\hbox {, 23}
+\item\ 63. In Christ Alone\hbox {, 23}
+\item\ 64. I Know Who Holds Tomorrow\hbox {, 24}
+\item\ 65. If That Isn't Love\hbox {, 24}
+\item\ 66. Pass It On\hbox {, 24}
+\item\ 67. Here Is Love, Vast As The Ocean\hbox {, 25}
+\item\ 68. My Redeemer\hbox {, 25}
+\item\ 69. Channels Only\hbox {, 26}
+\item\ 70. I Have Been At The Altar\hbox {, 26}
+\item\ 71. And Is It So! I Shall Be Like Thy Son?\hbox {, 26}
+\item\ 72. Face To Face With Christ My Savior\hbox {, 27}
+\item\ 73. I Will Sing Of My Redeemer\hbox {, 27}
+\item\ 74. I Know Whom I Have Believed\hbox {, 27}
+\item\ 75. Lord Jesus, Thou Who Only Art\hbox {, 28}
+\item\ 76. When We All Get To Heaven\hbox {, 28}
+\item\ 77. He Dies! He Dies!\hbox {, 28}
+\item\ 78. I Am Waiting For The Dawning\hbox {, 29}
+\item\ 79. Safe In The Arms Of Jesus\hbox {, 29}
+\item\ 80. All That Thrills My Soul Is Jesus\hbox {, 29}
+\item\ 81. Down From His Glory\hbox {, 30}
+\item\ 82. Guide Me, O Thou Great Jehovah\hbox {, 30}
+\item\ 83. Through My Hand No Nail Is Driven\hbox {, 31}
+\item\ 84. It Was Down At The Feet Of Jesus\hbox {, 31}
+\item\ 85. Leaning On The Everlasting Arms\hbox {, 31}
+\item\ 86. Nearer, My God, To Thee\hbox {, 32}
+\item\ 87. O Love That Will Not Let Me Go\hbox {, 32}
+\item\ 88. Praise Him! Praise Him!\hbox {, 32}
+\item\ 89. The Old Rugged Cross\hbox {, 33}
+\item\ 90. Christ Returneth\hbox {, 33}
+\item\ 91. 'Tis So Sweet To Trust In Jesus\hbox {, 33}
+\item\ 92. Shout To The Lord\hbox {, 34}
+\item\ 93. Yet Not I But Through Christ In Me\hbox {, 34}
