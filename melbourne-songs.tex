@@ -75,6 +75,10 @@
 
 \documentclass[12pt]{book}
 \usepackage{latexsym,fancyhdr}
+\usepackage{hyperref}
+
+% Custom command for song index hyperlinks - makes entire entry clickable
+\newcommand{\sbindexitem}[2]{\item \hyperlink{song#2}{#1,~#2}}
 %%\usepackage[chordbk]{songbook}                  %% Words & Chords edition.
 %%\usepackage[compactsong,chordbk]{songbook}    %% Words & Chords edition.
 \usepackage[wordbk]{songbook}                 %% Words Only edition.
@@ -171,7 +175,8 @@
 \fancyhead[RE,LO]{\RHeadFont\RelDate}
 \fi\fi\fi
 
-\fancyfoot[C]{\LFootFont v0.1 // please reach out for corrections}
+\fancyfoot[L]{\LFootFont v0.1 // please reach out for corrections}
+\fancyfoot[R]{\LFootFont\hyperlink{songindex}{Back to Index}}
 % \ifSongEject
 % \fancyfoot[CE,CO]{\CFootFont Last Revised:  \RevDate}
 % \else
@@ -184,7 +189,7 @@
 % turn index generation on;  comment it out to turn index generation
 % off.
 %%%
-% \makeTitleIndex         %% Title and First Line Index.
+\makeTitleIndex         %% Title and First Line Index.
 % \makeTitleContents      %% Table of Contents.
 % \makeKeyIndex           %% Index of song by key.
 % \makeArtistIndex  %% Index of song by artist.
@@ -210,6 +215,7 @@
 
 \newpage
 % \section*{Title Index}
+\hypertarget{songindex}{}
 \begin{theindex}
   \input{melbourne-songs.tdx}
 \end{theindex}

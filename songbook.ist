@@ -1,4 +1,6 @@
 level		'+'
 preamble	""
 postamble	""
-delim_0		",~"
+item_0		"\n  \\sbindexitem{"
+delim_0		"}{"
+delim_t		"}"
