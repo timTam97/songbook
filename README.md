@@ -73,7 +73,9 @@ editing the `.tex` file and pushing to `master` updates the site.
 - **Search** covers titles, first lines, lyrics and authors. It matches as you
   type and tolerates typos.
 - The **PDF** download serves the committed `melbourne-songs.pdf`, so commit
-  the recompiled PDF along with `.tex` changes.
+  the recompiled PDF along with `.tex` changes. `web/public/` holds files
+  published as-is at the site root, such as the archived
+  `melbourne-songs-v0.1.pdf`, which keeps its old URL.
 
 The parser understands the environments and commands this songbook uses
 (`SBVerse`, `SBOpGroup`, `SBChorus`, `SBSection`, `\textit`, `\Ch`, `\SBRef`,
@@ -116,3 +118,30 @@ The deploy role reuses the account's existing GitHub OIDC provider. In an
 account without one, deploy with `-c createGithubOidcProvider=true`.
 
 Manual deploy from a laptop: `npm run deploy` (after `aws sso login`).
+
+### Custom domain
+
+The domain and its certificate are deliberately kept out of the repo. The
+CDK app reads them from two settings:
+
+| Setting | Value |
+| --- | --- |
+| `SITE_DOMAIN_NAME` | e.g. `songs.example.com` |
+| `SITE_CERTIFICATE_ARN` | ACM certificate for that name, **in us-east-1** (a CloudFront requirement) |
+
+- **CI:** repository *secrets* (not variables, so they are masked in public logs).
+- **Locally:** `infra/.env.local`, which is gitignored:
+
+  ```bash
+  SITE_DOMAIN_NAME=songs.example.com
+  SITE_CERTIFICATE_ARN=arn:aws:acm:us-east-1:<account>:certificate/<id>
+  ```
+
+A deploy without these settings fails rather than detaching the domain from
+the live site. To deploy without a custom domain on purpose, set
+`SITE_NO_DOMAIN=true`.
+
+To move to a new domain:
+1. Request an ACM certificate for it in us-east-1 and validate it through DNS.
+2. Update both settings and deploy.
+3. Point the new name's CNAME at the distribution's `*.cloudfront.net` address (DNS only, not proxied).

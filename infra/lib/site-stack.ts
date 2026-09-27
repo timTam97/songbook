@@ -1,14 +1,24 @@
 import path from 'node:path';
 import { CfnOutput, Duration, RemovalPolicy, Stack, type StackProps } from 'aws-cdk-lib';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import type { Construct } from 'constructs';
 
+export interface SiteDomain {
+  /** Hostname the site is served on. */
+  name: string;
+  /** ACM certificate in us-east-1 that covers `name`. */
+  certificateArn: string;
+}
+
 export interface SiteStackProps extends StackProps {
   /** Directory holding the built web app (web/dist). */
   siteDir: string;
+  /** Custom domain. Omit to serve only on the *.cloudfront.net address. */
+  domain?: SiteDomain;
 }
 
 /**
@@ -68,14 +78,25 @@ export class SiteStack extends Stack {
       comment: 'Rewrite app routes to /index.html',
     });
 
+    const { domain } = props;
+    if (domain && !/^arn:aws:acm:us-east-1:\d{12}:certificate\/[\w-]+$/.test(domain.certificateArn)) {
+      throw new Error('The CloudFront certificate must be an ACM certificate ARN in us-east-1.');
+    }
+
     this.distribution = new cloudfront.Distribution(this, 'Distribution', {
       comment: 'Melbourne Songs',
       defaultRootObject: 'index.html',
       httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
       // The audience is in Australia, which only PRICE_CLASS_ALL covers.
       priceClass: cloudfront.PriceClass.PRICE_CLASS_ALL,
-      // No minimumProtocolVersion: CloudFront only honours it with a custom
-      // domain certificate. Add it alongside `domainNames` + `certificate`.
+      // CloudFront only applies a TLS minimum with a custom certificate.
+      ...(domain
+        ? {
+            domainNames: [domain.name],
+            certificate: acm.Certificate.fromCertificateArn(this, 'Certificate', domain.certificateArn),
+            minimumProtocolVersion: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
+          }
+        : {}),
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(bucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,

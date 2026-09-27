@@ -90,6 +90,44 @@ describe('SiteStack', () => {
   });
 });
 
+describe('SiteStack with a custom domain', () => {
+  const certificateArn = 'arn:aws:acm:us-east-1:123456789012:certificate/00000000-0000-0000-0000-000000000000';
+
+  it('serves the domain with its certificate and TLS 1.2 minimum', () => {
+    const template = Template.fromStack(
+      new SiteStack(new App(), 'Site', { env, siteDir, domain: { name: 'songs.example.com', certificateArn } }),
+    );
+    template.hasResourceProperties('AWS::CloudFront::Distribution', {
+      DistributionConfig: Match.objectLike({
+        Aliases: ['songs.example.com'],
+        ViewerCertificate: {
+          AcmCertificateArn: certificateArn,
+          SslSupportMethod: 'sni-only',
+          MinimumProtocolVersion: 'TLSv1.2_2021',
+        },
+      }),
+    });
+  });
+
+  it('has no alias or custom certificate without a domain', () => {
+    const template = Template.fromStack(new SiteStack(new App(), 'Site', { env, siteDir }));
+    const dist = Object.values(template.findResources('AWS::CloudFront::Distribution'))[0];
+    expect(dist.Properties.DistributionConfig.Aliases).toBeUndefined();
+    expect(dist.Properties.DistributionConfig.ViewerCertificate).toBeUndefined();
+  });
+
+  it('rejects a certificate outside us-east-1', () => {
+    expect(
+      () =>
+        new SiteStack(new App(), 'Site', {
+          env,
+          siteDir,
+          domain: { name: 'songs.example.com', certificateArn: certificateArn.replace('us-east-1', 'ap-southeast-2') },
+        }),
+    ).toThrow(/us-east-1/);
+  });
+});
+
 describe('GithubDeployStack', () => {
   const synth = (createProvider: boolean) =>
     Template.fromStack(new GithubDeployStack(new App(), 'Deploy', { env, repo: 'timTam97/songbook', branch: 'master', createProvider }));

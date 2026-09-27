@@ -50,7 +50,10 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      - run: npm run synth
+      - name: Synth (checks only; the real domain is added at deploy)
+        run: npm run synth
+        env:
+          SITE_NO_DOMAIN: 'true'
 
       - name: Configure AWS credentials
         if: env.DEPLOY == 'true'
@@ -62,6 +65,11 @@ jobs:
       - name: Deploy
         if: env.DEPLOY == 'true'
         working-directory: infra
+        # Secrets (not variables) so the domain is masked in the public logs.
+        # If either is missing the CDK app refuses to deploy rather than detach the domain.
+        env:
+          SITE_DOMAIN_NAME: ${{ secrets.SITE_DOMAIN_NAME }}
+          SITE_CERTIFICATE_ARN: ${{ secrets.SITE_CERTIFICATE_ARN }}
         # Only the site. The deploy role's own stack is changed by hand, never by CI.
         run: npx cdk deploy MelbourneSongsSite --require-approval never --outputs-file cdk-outputs.json
 
@@ -69,4 +77,4 @@ jobs:
         if: env.DEPLOY == 'true'
         run: |
           url=$(node -p "require('./infra/cdk-outputs.json').MelbourneSongsSite.SiteUrl")
-          echo "Deployed to $url" >> "$GITHUB_STEP_SUMMARY"
+          echo "Deployed. CloudFront address: $url" >> "$GITHUB_STEP_SUMMARY"

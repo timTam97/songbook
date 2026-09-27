@@ -49,4 +49,6 @@ web/dist/
 infra/cdk.out/
 infra/cdk-outputs.json
 infra/cdk.context.json
+.env.local
+.env*.local
 .tmp/
