@@ -34,21 +34,20 @@ function LyricLine({ line }: { line: Line }) {
 export function SongLyrics({ sections }: { sections: Section[] }) {
   return (
     <div className="lyrics space-y-[1.1em] font-serif">
-      {sections.map((section, k) =>
-        section.kind === 'chorus' ? (
-          <section key={k} aria-label="Chorus" className="ml-[2.25em] border-l-2 border-stone-300 pl-[1em] dark:border-stone-700">
-            {section.lines.map((line, j) => (
-              <LyricLine key={j} line={line} />
-            ))}
-          </section>
-        ) : (
-          <section
-            key={k}
-            aria-label={section.label ? `${section.kind === 'verse' ? 'Verse' : 'Part'} ${section.label}` : undefined}
-            className="grid grid-cols-[2.25em_1fr]"
-          >
+      {sections.map((section, k) => {
+        // Choruses stand on their own: same column as verse text, just without a number.
+        const name =
+          section.kind === 'chorus'
+            ? 'Chorus'
+            : section.label
+              ? `${section.kind === 'verse' ? 'Verse' : 'Part'} ${section.label}`
+              : undefined;
+        const marker =
+          section.kind === 'chorus' || !section.label ? '' : section.kind === 'section' ? `${section.label})` : `${section.label}.`;
+        return (
+          <section key={k} aria-label={name} className="grid grid-cols-[2.25em_1fr]">
             <span aria-hidden="true" className="pt-[0.2em] font-sans text-[0.8em] font-semibold text-stone-400 tabular-nums dark:text-stone-500">
-              {section.label ? (section.kind === 'section' ? `${section.label})` : `${section.label}.`) : ''}
+              {marker}
             </span>
             <div>
               {section.lines.map((line, j) => (
@@ -56,8 +55,8 @@ export function SongLyrics({ sections }: { sections: Section[] }) {
               ))}
             </div>
           </section>
-        ),
-      )}
+        );
+      })}
     </div>
   );
 }

@@ -64,8 +64,10 @@ editing the `.tex` file and pushing to `master` updates the site.
   `\begin{song}` blocks that are not commented out, the same counter
   `songbook.sty` prints. Songs excluded with `\begin{song}[N]` still use up a
   number, as they do in the PDF.
-- **Get to a hymn by number:** type the number anywhere on the site and press
-  Enter, use the `#` box in the header, search for `42`, or open `/42`.
+- **Get to a hymn by number:** type the number in the `#` box, or just type it
+  anywhere on the site. The hymn opens as soon as the number is unambiguous
+  ("25" at once; "2" after a one-second pause in case "25" is coming). You
+  can also search for `42` or open `/42`.
   Song URLs look like `/songs/42/because-he-lives`. If the book is later
   renumbered, the slug still finds the right hymn.
 - **Search** covers titles, first lines, lyrics and authors. It matches as you

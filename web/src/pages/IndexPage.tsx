@@ -35,32 +35,6 @@ function SongRow({ song, children }: { song: Song; children?: ReactNode }) {
   );
 }
 
-const authorOf = (s: Song) => s.author ?? (s.copyright && s.copyright !== 'Public Domain' ? s.copyright : 'Unknown');
-
-function AuthorIndex() {
-  const groups = useMemo(() => {
-    const map = new Map<string, Song[]>();
-    for (const s of index.songs) map.set(authorOf(s), [...(map.get(authorOf(s)) ?? []), s]);
-    return [...map.entries()].sort(([a], [b]) => (a === 'Unknown' ? 1 : b === 'Unknown' ? -1 : a.localeCompare(b)));
-  }, []);
-  return (
-    <div className="space-y-6">
-      {groups.map(([author, songs]) => (
-        <section key={author} aria-labelledby={`author-${author}`}>
-          <h2 id={`author-${author}`} className="mb-1 text-sm font-semibold tracking-wide text-stone-500 uppercase dark:text-stone-400">
-            {author}
-          </h2>
-          <ul>
-            {songs.map((s) => (
-              <SongRow key={s.number} song={s} />
-            ))}
-          </ul>
-        </section>
-      ))}
-    </div>
-  );
-}
-
 function NumberIndex() {
   return (
     <ol>
@@ -76,7 +50,6 @@ function NumberIndex() {
 export function IndexPage() {
   const [params, setParams] = useSearchParams();
   const query = params.get('q') ?? '';
-  const view = params.get('view') === 'authors' ? 'authors' : 'number';
   const hits = useMemo(() => search(query), [query]);
   const field = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -105,18 +78,6 @@ export function IndexPage() {
     }
     setParams(p, { replace: true });
   };
-
-  const tab = (id: 'number' | 'authors', label: string) => (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={view === id}
-      onClick={() => update({ view: id === 'number' ? undefined : id })}
-      className="rounded-md px-3 py-1.5 text-sm font-medium text-stone-600 aria-selected:bg-stone-200 aria-selected:text-stone-900 hover:text-stone-900 dark:text-stone-400 dark:aria-selected:bg-stone-800 dark:aria-selected:text-stone-100 dark:hover:text-stone-100"
-    >
-      {label}
-    </button>
-  );
 
   return (
     <>
@@ -160,13 +121,9 @@ export function IndexPage() {
           </ul>
         </section>
       ) : (
-        <>
-          <div role="tablist" aria-label="Browse" className="mt-4 mb-2 flex gap-1">
-            {tab('number', 'By number')}
-            {tab('authors', 'By author')}
-          </div>
-          {view === 'authors' ? <AuthorIndex /> : <NumberIndex />}
-        </>
+        <nav aria-label="All hymns" className="mt-4">
+          <NumberIndex />
+        </nav>
       )}
     </>
   );
