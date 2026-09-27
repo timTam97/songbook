@@ -1,0 +1,21 @@
+{
+  "name": "melbourne-songs",
+  "private": true,
+  "description": "Melbourne Songs: LaTeX songbook plus a web app generated from it",
+  "workspaces": [
+    "web",
+    "infra"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "npm run dev -w web",
+    "parse": "npm run parse -w web",
+    "build": "npm run build -w web",
+    "test": "npm test -w web && npm test -w infra",
+    "typecheck": "npm run typecheck -w web && npm run typecheck -w infra",
+    "synth": "npm run synth -w infra",
+    "deploy": "npm run build -w web && npm run deploy -w infra -- MelbourneSongsSite"
+  }
+}

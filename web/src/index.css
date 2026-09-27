@@ -1,0 +1,39 @@
+@import 'tailwindcss';
+
+/* Dark mode follows the .dark class set by /theme.js (system default, user override). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman', serif;
+}
+
+@layer base {
+  html {
+    @apply bg-stone-50 text-stone-900 antialiased dark:bg-stone-900 dark:text-stone-100;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply min-h-dvh font-sans;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-stone-900 dark:outline-stone-100;
+  }
+  mark {
+    @apply rounded-sm bg-amber-200 px-0.5 text-inherit dark:bg-amber-700/60;
+  }
+}
+
+/* Lyric size is user-adjustable; every lyric measurement derives from it. */
+.lyrics {
+  font-size: calc(1.125rem * var(--lyric-scale, 1));
+  line-height: 1.55;
+}
+
+@media print {
+  header,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+}

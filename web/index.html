@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Search, browse and read the Melbourne Songs hymn book." />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fafaf9" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1c1917" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Applies the saved light/dark choice before first paint (external so the CSP can stay script-src 'self'). -->
+    <script src="/theme.js"></script>
+    <title>Melbourne Songs</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>Melbourne Songs needs JavaScript. The <a href="/melbourne-songs.pdf">PDF</a> works without it.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
