@@ -1,0 +1,72 @@
+# Rebuilds the web app from melbourne-songs.tex and deploys it.
+#  - Pull requests: parse, test and build only (bad LaTeX fails with file:line).
+#  - Pushes to master: the same, then deploy to AWS through GitHub OIDC.
+name: Web app
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - melbourne-songs.tex
+      - melbourne-songs.pdf
+      - web/**
+      - infra/**
+      - package.json
+      - package-lock.json
+      - .github/workflows/web.yml
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never run two deploys at once; a newer push waits for the current one.
+concurrency:
+  group: web-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write # OIDC token for AWS; the role only trusts master
+    env:
+      DEPLOY: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Parse songbook
+        run: npm run parse
+
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run synth
+
+      - name: Configure AWS credentials
+        if: env.DEPLOY == 'true'
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'ap-southeast-2' }}
+
+      - name: Deploy
+        if: env.DEPLOY == 'true'
+        working-directory: infra
+        # Only the site. The deploy role's own stack is changed by hand, never by CI.
+        run: npx cdk deploy MelbourneSongsSite --require-approval never --outputs-file cdk-outputs.json
+
+      - name: Summary
+        if: env.DEPLOY == 'true'
+        run: |
+          url=$(node -p "require('./infra/cdk-outputs.json').MelbourneSongsSite.SiteUrl")
+          echo "Deployed to $url" >> "$GITHUB_STEP_SUMMARY"

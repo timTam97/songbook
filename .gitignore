@@ -42,3 +42,11 @@
 # OS files
 .DS_Store
 Thumbs.db
+
+# Web app / infrastructure
+node_modules/
+web/dist/
+infra/cdk.out/
+infra/cdk-outputs.json
+infra/cdk.context.json
+.tmp/
