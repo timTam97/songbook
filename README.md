@@ -4,8 +4,14 @@ A LaTeX songbook for Melbourne church gatherings.
 
 ## Build
 
+CI compiles the PDF on every push and pull request (see [Deploy](#deploy)).
+To build it locally:
+
 ```bash
 pdflatex melbourne-songs.tex
+./mksbtdx melbourne-songs    # Title/first-line index
+pdflatex melbourne-songs.tex
+pdflatex melbourne-songs.tex # hyperref needs one more pass for its links
 ```
 
 ## Generate Indexes
@@ -43,11 +49,11 @@ Add songs before `\end{document}` in `melbourne-songs.tex` using:
 
 ```
 melbourne-songs.tex    # Main songbook source (source of truth for the PDF and the web app)
-melbourne-songs.pdf    # Compiled output
+melbourne-songs.pdf    # Compiled output (the site serves CI's own build instead)
 songbook.sty           # LaTeX style (required)
 web/                   # Web app, generated from melbourne-songs.tex at build time
 infra/                 # AWS CDK app that hosts the web app (S3 + CloudFront)
-.github/workflows/     # CI: rebuilds and redeploys the web app on every push to master
+.github/workflows/     # CI: rebuilds the PDF and web app and redeploys on every push to master
 samples/               # Original Songbook 4.3 examples
 contrib/               # Utilities (chord diagrams, transposition)
 ```
@@ -72,10 +78,12 @@ editing the `.tex` file and pushing to `master` updates the site.
   renumbered, the slug still finds the right hymn.
 - **Search** covers titles, first lines, lyrics and authors. It matches as you
   type and tolerates typos.
-- The **PDF** download serves the committed `melbourne-songs.pdf`, so commit
-  the recompiled PDF along with `.tex` changes. `web/public/` holds files
-  published as-is at the site root, such as the archived
-  `melbourne-songs-v0.1.pdf`, which keeps its old URL.
+- The **PDF** download is compiled from `melbourne-songs.tex` by CI on every
+  deploy, so it always matches the site. The committed `melbourne-songs.pdf`
+  is not what the site serves and may lag behind. The title page's
+  "Last Revised" date is the date of the last commit that changed the `.tex`.
+  `web/public/` holds files published as-is at the site root, such as the
+  archived `melbourne-songs-v0.1.pdf`, which keeps its old URL.
 
 The parser understands the environments and commands this songbook uses
 (`SBVerse`, `SBOpGroup`, `SBChorus`, `SBSection`, `\textit`, `\Ch`, `\SBRef`,
@@ -100,9 +108,11 @@ npm run build      # production build in web/dist
 ### Deploy
 
 Pushes to `master` that touch the songbook, `web/` or `infra/` run
-`.github/workflows/web.yml`. It parses, tests and builds, then deploys with
-`cdk deploy`, using a GitHub OIDC role (no stored AWS keys). Pull requests
-run the same checks without deploying.
+`.github/workflows/web.yml`. It parses, tests, compiles the PDF (TeX Live
+from Ubuntu's packages) and builds, then deploys with `cdk deploy`, using a
+GitHub OIDC role (no stored AWS keys). Pull requests run the same checks
+without deploying; each run attaches the compiled PDF as the
+`melbourne-songs-pdf` artifact, so a PR's PDF can be checked before merging.
 
 One-time setup, already done for this repo (region `ap-southeast-2`):
 
