@@ -1,5 +1,6 @@
-# Rebuilds the web app from melbourne-songs.tex and deploys it.
-#  - Pull requests: parse, test and build only (bad LaTeX fails with file:line).
+# Rebuilds the web app and the PDF from melbourne-songs.tex and deploys them.
+#  - Pull requests: parse, test, compile the PDF and build only (bad LaTeX
+#    fails with file:line). The PDF is attached to the run as an artifact.
 #  - Pushes to master: the same, then deploy to AWS through GitHub OIDC.
 name: Web app
 
@@ -9,6 +10,9 @@ on:
     paths:
       - melbourne-songs.tex
       - melbourne-songs.pdf
+      - songbook.sty
+      - songbook.ist
+      - conditionals.sty
       - web/**
       - infra/**
       - package.json
@@ -36,6 +40,8 @@ jobs:
       DEPLOY: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # full history: the PDF's date comes from the last .tex commit
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -49,6 +55,41 @@ jobs:
 
       - run: npm run typecheck
       - run: npm test
+
+      - name: Install TeX Live
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base texlive-latex-recommended texlive-fonts-recommended
+
+      # Overwrites the committed melbourne-songs.pdf in the workspace, so the
+      # web build below publishes the PDF compiled from this exact .tex.
+      - name: Build PDF
+        run: |
+          # The title page's "Last Revised" is \today. Pin it to the last commit
+          # that changed the songbook, in Melbourne time, so the date neither
+          # moves on web-only deploys nor follows the runner's UTC clock.
+          read -r day month year < <(TZ=Australia/Melbourne \
+            git log -1 --format=%cd --date=format-local:'%d %m %Y' -- melbourne-songs.tex)
+          # Same moment for the PDF's metadata, so rebuilds are byte-identical.
+          export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct -- melbourne-songs.tex)
+          run_pdflatex() {
+            pdflatex -interaction=nonstopmode -halt-on-error -jobname=melbourne-songs \
+              "\day=$day \month=$month \year=$year \input{melbourne-songs.tex}"
+          }
+          touch melbourne-songs.tdx # pass 1 \input's the index before makeindex writes it
+          run_pdflatex
+          makeindex -s songbook.ist -o melbourne-songs.tdx melbourne-songs.tIdx
+          run_pdflatex
+          run_pdflatex # hyperref needs one more pass for its link targets
+
+      - name: Upload PDF
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: melbourne-songs-pdf
+          path: melbourne-songs.pdf
+          if-no-files-found: error
+
       - run: npm run build
       - name: Synth (checks only; the real domain is added at deploy)
         run: npm run synth
