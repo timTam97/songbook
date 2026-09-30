@@ -57,10 +57,13 @@ jobs:
       - run: npm test
 
       - name: Install TeX Live
+        # cm-super-minimal: Type 1 versions of the EC/TS1 fonts. Without it
+        # pdflatex falls back to a bitmap font for one symbol font (tcrm0800).
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            texlive-latex-base texlive-latex-recommended texlive-fonts-recommended
+            texlive-latex-base texlive-latex-recommended texlive-fonts-recommended \
+            cm-super-minimal
 
       # Overwrites the committed melbourne-songs.pdf in the workspace, so the
       # web build below publishes the PDF compiled from this exact .tex.
