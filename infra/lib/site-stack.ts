@@ -8,10 +8,19 @@ import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import type { Construct } from 'constructs';
 
 export interface SiteDomain {
-  /** Hostname the site is served on. */
-  name: string;
-  /** ACM certificate in us-east-1 that covers `name`. */
+  /** Hostnames the site is served on. */
+  names: string[];
+  /** ACM certificate in us-east-1 that covers every name in `names`. */
   certificateArn: string;
+}
+
+/** Splits a comma-separated SITE_DOMAIN_NAME value into distinct hostnames. */
+export function parseDomainNames(value: string | undefined): string[] {
+  const names = (value ?? '')
+    .split(',')
+    .map((name) => name.trim().toLowerCase())
+    .filter(Boolean);
+  return [...new Set(names)];
 }
 
 export interface SiteStackProps extends StackProps {
@@ -82,6 +91,9 @@ export class SiteStack extends Stack {
     if (domain && !/^arn:aws:acm:us-east-1:\d{12}:certificate\/[\w-]+$/.test(domain.certificateArn)) {
       throw new Error('The CloudFront certificate must be an ACM certificate ARN in us-east-1.');
     }
+    if (domain && domain.names.length === 0) {
+      throw new Error('A custom domain needs at least one hostname.');
+    }
 
     this.distribution = new cloudfront.Distribution(this, 'Distribution', {
       comment: 'Melbourne Songs',
@@ -92,7 +104,7 @@ export class SiteStack extends Stack {
       // CloudFront only applies a TLS minimum with a custom certificate.
       ...(domain
         ? {
-            domainNames: [domain.name],
+            domainNames: domain.names,
             certificate: acm.Certificate.fromCertificateArn(this, 'Certificate', domain.certificateArn),
             minimumProtocolVersion: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
           }

@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { App, Tags } from 'aws-cdk-lib';
 import { GithubDeployStack } from '../lib/github-deploy-stack.ts';
-import { SiteStack, type SiteDomain } from '../lib/site-stack.ts';
+import { parseDomainNames, SiteStack, type SiteDomain } from '../lib/site-stack.ts';
 
 // Local, gitignored settings (see README). CI passes the same variables from repository secrets.
 const envFile = fileURLToPath(new URL('../.env.local', import.meta.url));
@@ -25,9 +25,10 @@ const env = {
  * explicitly with SITE_NO_DOMAIN=true (CI does this for synth-only checks).
  */
 function siteDomain(): SiteDomain | undefined {
-  const name = process.env.SITE_DOMAIN_NAME?.trim();
+  // Comma-separated, e.g. "songs.example.com,files.example.com".
+  const names = parseDomainNames(process.env.SITE_DOMAIN_NAME);
   const certificateArn = process.env.SITE_CERTIFICATE_ARN?.trim();
-  if (name && certificateArn) return { name, certificateArn };
+  if (names.length && certificateArn) return { names, certificateArn };
   if (process.env.SITE_NO_DOMAIN === 'true') return undefined;
   throw new Error(
     'Set SITE_DOMAIN_NAME and SITE_CERTIFICATE_ARN (infra/.env.local or CI secrets), ' +

@@ -126,14 +126,14 @@ CDK app reads them from two settings:
 
 | Setting | Value |
 | --- | --- |
-| `SITE_DOMAIN_NAME` | e.g. `songs.example.com` |
-| `SITE_CERTIFICATE_ARN` | ACM certificate for that name, **in us-east-1** (a CloudFront requirement) |
+| `SITE_DOMAIN_NAME` | Hostname(s), comma-separated for more than one, e.g. `songs.example.com,files.example.com` |
+| `SITE_CERTIFICATE_ARN` | ACM certificate covering **every** name, **in us-east-1** (a CloudFront requirement) |
 
 - **CI:** repository *secrets* (not variables, so they are masked in public logs).
 - **Locally:** `infra/.env.local`, which is gitignored:
 
   ```bash
-  SITE_DOMAIN_NAME=songs.example.com
+  SITE_DOMAIN_NAME=songs.example.com,files.example.com
   SITE_CERTIFICATE_ARN=arn:aws:acm:us-east-1:<account>:certificate/<id>
   ```
 
@@ -141,7 +141,9 @@ A deploy without these settings fails rather than detaching the domain from
 the live site. To deploy without a custom domain on purpose, set
 `SITE_NO_DOMAIN=true`.
 
-To move to a new domain:
-1. Request an ACM certificate for it in us-east-1 and validate it through DNS.
-2. Update both settings and deploy.
-3. Point the new name's CNAME at the distribution's `*.cloudfront.net` address (DNS only, not proxied).
+To add or move to a new domain:
+1. Request an ACM certificate in us-east-1 that covers every name the site
+   should keep serving, and validate it through DNS.
+2. Update both settings and deploy. CloudFront swaps the certificate in place,
+   so the existing names stay up.
+3. Point each new name's CNAME at the distribution's `*.cloudfront.net` address (DNS only, not proxied).
