@@ -5,7 +5,7 @@ import { App } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { afterAll, describe, expect, it } from 'vitest';
 import { GithubDeployStack } from '../lib/github-deploy-stack.ts';
-import { SiteStack } from '../lib/site-stack.ts';
+import { parseDomainNames, SiteStack } from '../lib/site-stack.ts';
 
 const env = { account: '123456789012', region: 'ap-southeast-2' };
 
@@ -93,13 +93,17 @@ describe('SiteStack', () => {
 describe('SiteStack with a custom domain', () => {
   const certificateArn = 'arn:aws:acm:us-east-1:123456789012:certificate/00000000-0000-0000-0000-000000000000';
 
-  it('serves the domain with its certificate and TLS 1.2 minimum', () => {
+  it('serves every domain name with its certificate and TLS 1.2 minimum', () => {
     const template = Template.fromStack(
-      new SiteStack(new App(), 'Site', { env, siteDir, domain: { name: 'songs.example.com', certificateArn } }),
+      new SiteStack(new App(), 'Site', {
+        env,
+        siteDir,
+        domain: { names: ['songs.example.com', 'files.example.com'], certificateArn },
+      }),
     );
     template.hasResourceProperties('AWS::CloudFront::Distribution', {
       DistributionConfig: Match.objectLike({
-        Aliases: ['songs.example.com'],
+        Aliases: ['songs.example.com', 'files.example.com'],
         ViewerCertificate: {
           AcmCertificateArn: certificateArn,
           SslSupportMethod: 'sni-only',
@@ -122,9 +126,30 @@ describe('SiteStack with a custom domain', () => {
         new SiteStack(new App(), 'Site', {
           env,
           siteDir,
-          domain: { name: 'songs.example.com', certificateArn: certificateArn.replace('us-east-1', 'ap-southeast-2') },
+          domain: { names: ['songs.example.com'], certificateArn: certificateArn.replace('us-east-1', 'ap-southeast-2') },
         }),
     ).toThrow(/us-east-1/);
+  });
+
+  it('rejects a domain with no names', () => {
+    expect(() => new SiteStack(new App(), 'Site', { env, siteDir, domain: { names: [], certificateArn } })).toThrow(
+      /at least one hostname/,
+    );
+  });
+});
+
+describe('parseDomainNames', () => {
+  it('splits a comma-separated list, trimming, lower-casing and dropping blanks and repeats', () => {
+    expect(parseDomainNames(' Songs.example.com, files.example.com,,songs.example.com ')).toEqual([
+      'songs.example.com',
+      'files.example.com',
+    ]);
+  });
+
+  it('accepts a single name and returns nothing for an unset value', () => {
+    expect(parseDomainNames('songs.example.com')).toEqual(['songs.example.com']);
+    expect(parseDomainNames(undefined)).toEqual([]);
+    expect(parseDomainNames(' , ')).toEqual([]);
   });
 });
 
