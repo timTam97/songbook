@@ -81,7 +81,8 @@ function Shell({ user }: { user: User }) {
             Songbook admin
           </Link>
           {BETA && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 uppercase dark:bg-amber-900/60 dark:text-amber-100">Beta</span>}
-          <nav aria-label="Admin" className="flex items-center gap-1">
+          {/* On phones the tabs drop to a row of their own under the title and account links. */}
+          <nav aria-label="Admin" className="order-last -ml-2.5 flex w-full items-center gap-1 sm:order-none sm:ml-0 sm:w-auto">
             <NavLink to="/admin" end className={navLink}>
               Songs
             </NavLink>
@@ -92,13 +93,16 @@ function Shell({ user }: { user: User }) {
               Book
             </NavLink>
           </nav>
-          <span className="ml-auto truncate text-sm text-stone-500 dark:text-stone-400">{emailOf(user)}</span>
-          <a href="/" className={button.link}>
-            View site
-          </a>
-          <button type="button" className={button.link} onClick={() => void signOut()}>
-            Sign out
-          </button>
+          <div className="ml-auto flex min-w-0 items-center gap-3">
+            {/* Only where there is room for it on the one row. */}
+            <span className="hidden truncate text-sm text-stone-500 lg:inline dark:text-stone-400">{emailOf(user)}</span>
+            <a href="/" className={`${button.link} shrink-0`}>
+              View site
+            </a>
+            <button type="button" className={`${button.link} shrink-0`} onClick={() => void signOut()}>
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
       <main id="main" className="mx-auto max-w-6xl px-4 pt-5 pb-20">
