@@ -270,6 +270,14 @@ own hostname:
    CloudFront distribution of its own, which can take up to an hour to come
    up; the old prefix domain keeps working until the deploy swaps it out.
 3. CNAME the hostname (DNS only, not proxied) to the stack's `AuthDomainTarget`
+
+The sign-in pages are styled to match the site (stone colours, light or dark
+following the browser, the site's icon and title) by
+`infra/lib/login-branding.ts`. Cognito lets a style change colours, logos and
+layout but not the wording. The logo spells out the title, so update it there
+if the book is renamed. To try a change without a deploy, push it straight
+to beta with `aws cognito-idp update-managed-login-branding`; the next deploy
+replaces whatever is live with what the code says.
    output. Sign-in on that stage works once it resolves.
 
 ### The admin portal

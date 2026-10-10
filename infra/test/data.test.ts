@@ -188,7 +188,8 @@ describe('no personal details in the infrastructure code', () => {
   files.push(path.join(infra, 'cdk.json'));
 
   it('has no certificate ARNs or hostnames other than placeholders and AWS endpoints', () => {
-    const allowed = /(^|\.)(example\.com|amazonaws\.com|cloudfront\.net|github\.com|githubusercontent\.com|amazoncognito\.com)$/;
+    // w3.org: the SVG namespace in the sign-in logo.
+    const allowed = /(^|\.)(example\.com|amazonaws\.com|cloudfront\.net|github\.com|githubusercontent\.com|amazoncognito\.com|w3\.org)$/;
     for (const file of files) {
       const text = readFileSync(file, 'utf8');
       expect(text, file).not.toMatch(/arn:aws:acm:[a-z0-9-]+:\d{12}/);

@@ -16,6 +16,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import type * as lambda from 'aws-cdk-lib/aws-lambda';
 import { ADMIN_API_PREFIX, ADMIN_GROUP, ADMIN_ROUTES } from '@songbook/core';
 import { Construct } from 'constructs';
+import { LOGIN_BRANDING_SETTINGS, loginBrandingAssets } from './login-branding.ts';
 import { backendFunction } from './song-data.ts';
 import type { AuthDomain, Stage } from './stage.ts';
 
@@ -138,10 +139,13 @@ export class Admin extends Construct {
       preventUserExistenceErrors: true,
       enableTokenRevocation: true,
     });
+    // The sign-in pages wear the site's colours and logo (login-branding.ts).
     new cognito.CfnManagedLoginBranding(this, 'LoginBranding', {
       userPoolId: this.userPool.userPoolId,
       clientId: this.client.userPoolClientId,
-      useCognitoProvidedValues: true,
+      useCognitoProvidedValues: false,
+      settings: LOGIN_BRANDING_SETTINGS,
+      assets: loginBrandingAssets(),
     });
 
     // --- The API ------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { rmSync } from 'node:fs';
+import { readFileSync, rmSync } from 'node:fs';
 import { ADMIN_ROUTES } from '@songbook/core';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -32,6 +32,26 @@ describe('the editors user pool', () => {
     beta.hasResourceProperties('AWS::Cognito::UserPoolGroup', { GroupName: 'admins' });
     beta.hasResourceProperties('AWS::Cognito::UserPoolDomain', { Domain: 'example-auth', ManagedLoginVersion: 2 });
     beta.resourceCountIs('AWS::Cognito::ManagedLoginBranding', 1);
+  });
+
+  it("styles the sign-in pages like the site, in light and dark, with none of Cognito's defaults left", () => {
+    for (const template of [beta, prod]) {
+      const branding = Object.values(template.findResources('AWS::Cognito::ManagedLoginBranding'))[0].Properties;
+      expect(branding.UseCognitoProvidedValues).toBe(false);
+      expect(branding.Settings.categories.global.colorSchemeMode).toBe('DYNAMIC');
+      expect(branding.Settings.components.primaryButton.lightMode.defaults.backgroundColor).toBe('1c1917ff');
+      // Cognito's default blues and navies (0972d3, 539fe5, 0f1b2a, ...) must all have been replaced.
+      expect(JSON.stringify(branding.Settings)).not.toMatch(/0972d3|539fe5|033160|89bdee|0f1b2a|414d5c|000716/i);
+
+      const assets = branding.Assets as { Category: string; ColorMode: string; Extension: string; Bytes: string }[];
+      expect(assets.map((a) => `${a.Category}/${a.ColorMode}`).sort()).toEqual(['FAVICON_SVG/DARK', 'FAVICON_SVG/LIGHT', 'FORM_LOGO/DARK', 'FORM_LOGO/LIGHT']);
+      for (const asset of assets) {
+        expect(asset.Extension).toBe('SVG');
+        expect(Buffer.from(asset.Bytes, 'base64').toString()).toMatch(/^<svg [^>]*xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+      }
+      const favicon = assets.find((a) => a.Category === 'FAVICON_SVG')!;
+      expect(Buffer.from(favicon.Bytes, 'base64').toString()).toBe(readFileSync(new URL('../../web/public/favicon.svg', import.meta.url), 'utf8'));
+    }
   });
 
   it('lets the portal sign in with code + PKCE and no secret, back to its own hostnames only', () => {
