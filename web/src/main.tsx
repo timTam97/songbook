@@ -12,6 +12,12 @@ import './index.css';
 
 const router = createBrowserRouter([
   {
+    // The admin portal is its own chunk (with the sign-in library), loaded only on /admin.
+    path: '/admin/*',
+    lazy: async () => ({ Component: (await import('./admin/AdminApp.tsx')).AdminApp }),
+    HydrateFallback: Loading,
+  },
+  {
     // Every page needs the book: it is fetched once, before the first render.
     id: 'root',
     path: '/',

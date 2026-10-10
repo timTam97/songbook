@@ -23,8 +23,15 @@ export default defineConfig(({ mode }) => {
     ],
     server: {
       host: '127.0.0.1',
-      // With a target, dev reads a deployed stage's published book instead of the local .tex.
-      ...(target ? { proxy: { '/songbook.json': { target, changeOrigin: true, secure: true } } } : {}),
+      // With a target, dev reads a deployed stage's published book and talks to its admin API.
+      // Sign-in works from http://localhost:5173 (beta allows it as a callback), not 127.0.0.1.
+      ...(target
+        ? {
+            proxy: Object.fromEntries(
+              ['/songbook.json', '/admin-config.json', '/api'].map((path) => [path, { target, changeOrigin: true, secure: true }]),
+            ),
+          }
+        : {}),
     },
     preview: { host: '127.0.0.1' },
     test: {
