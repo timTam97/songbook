@@ -65,3 +65,10 @@ export interface Songbook extends BookMeta {
   schemaVersion?: number;
   songs: Song[];
 }
+
+/** A book to import into an empty table: the seed deploy asset, and what `npm run seed` sends. */
+export interface SeedFile {
+  /** Where the book came from, e.g. "melbourne-songs.tex@1a2b3c4". */
+  source: string;
+  book: Songbook;
+}

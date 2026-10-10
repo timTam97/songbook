@@ -1,10 +1,8 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
-import { index } from '../lib/data.ts';
+import { useSongData } from '../lib/data.ts';
 import { JUMP_PAUSE_MS, decideJump } from '../lib/jump.ts';
 import { songPath } from '../lib/songbook.ts';
-
-const NUMBERS = index.songs.map((s) => s.number);
 
 const isTypingTarget = (el: EventTarget | null) =>
   el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName));
@@ -16,6 +14,8 @@ const isTypingTarget = (el: EventTarget | null) =>
  * refines 2 → 25. Typing digits anywhere on the page starts filling the box.
  */
 export function NumberJump() {
+  const { index } = useSongData();
+  const numbers = useMemo(() => index.songs.map((s) => s.number), [index]);
   const [value, setValue] = useState('');
   const input = useRef<HTMLInputElement>(null);
   /** Number of a timed (pause) jump waiting to fire. */
@@ -23,7 +23,7 @@ export function NumberJump() {
   /** The last jump came from a pause and may still be refined, so the next one replaces it in history. */
   const tentative = useRef(false);
   const navigate = useNavigate();
-  const decision = decideJump(value, NUMBERS);
+  const decision = decideJump(value, numbers);
 
   const goTo = (n: number, final: boolean) => {
     const song = index.byNumber.get(n);

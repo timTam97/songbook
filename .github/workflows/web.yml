@@ -14,6 +14,7 @@ on:
       - songbook.ist
       - conditionals.sty
       - core/**
+      - backend/**
       - web/**
       - infra/**
       - package.json

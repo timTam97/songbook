@@ -8,6 +8,8 @@
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fafaf9" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1c1917" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- The book itself: downloads in parallel with the app's JS (see src/lib/data.ts). -->
+    <link rel="preload" href="/songbook.json" as="fetch" crossorigin />
     <!-- Applies the saved light/dark choice before first paint (external so the CSP can stay script-src 'self'). -->
     <script src="/theme.js"></script>
     <title>Melbourne Songs</title>

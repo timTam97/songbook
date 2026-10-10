@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 import { Layout } from './components/Layout.tsx';
+import { LoadError, Loading } from './components/Status.tsx';
+import { loadSongbook } from './lib/data.ts';
 import { IndexPage } from './pages/IndexPage.tsx';
 import { NotFound, NumberRedirect } from './pages/NotFound.tsx';
 import { SongPage } from './pages/SongPage.tsx';
@@ -10,7 +12,12 @@ import './index.css';
 
 const router = createBrowserRouter([
   {
+    // Every page needs the book: it is fetched once, before the first render.
+    id: 'root',
     path: '/',
+    loader: () => loadSongbook(),
+    HydrateFallback: Loading,
+    ErrorBoundary: LoadError,
     element: <Layout />,
     children: [
       { index: true, element: <IndexPage /> },
