@@ -208,6 +208,7 @@ export function Editor() {
         )}
         {saved && <Alert kind="success">{saved}</Alert>}
         {failure && <Alert>{failure}</Alert>}
+        {list.error !== undefined && <Alert kind="info">Hymn numbers are unavailable right now: {messageOf(list.error)}</Alert>}
         {songErrors.map((e) => (
           <Alert key={e.message}>{e.message}</Alert>
         ))}

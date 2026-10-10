@@ -5,7 +5,7 @@
  */
 import type { User } from 'oidc-client-ts';
 import { useEffect, useState } from 'react';
-import { Link, NavLink, Route, Routes, useNavigate } from 'react-router';
+import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router';
 import { completeSignIn, currentUser, emailOf, signIn, signOut } from './auth.ts';
 import { BookSettings } from './BookSettings.tsx';
 import { DeletedList } from './DeletedList.tsx';
@@ -120,7 +120,8 @@ export function AdminApp() {
   useNoIndex();
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [error, setError] = useState<string>();
-  const onCallback = window.location.pathname === '/admin/callback';
+  // From the router, not window.location, so finishing sign-in re-renders into the portal.
+  const onCallback = useLocation().pathname === '/admin/callback';
 
   useEffect(() => {
     if (onCallback) return;
