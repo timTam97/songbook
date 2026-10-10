@@ -365,9 +365,9 @@ build, synth) on every push without deploying anything. The OIDC deploy role onl
 
 ## Cutover to production (only when you decide)
 
-1. **Choose the prod data source (Decision 6):** the latest `.tex` on master (default; beta stays a
-   sandbox), or beta's data exported with `npm run export -- --stage beta --out <dir>` (its
-   `songbook.json` is accepted as `SEED_FILE`).
+1. **Prod data source (Decision 6): decided, the latest `.tex` on master;** beta stays a sandbox and
+   its data is not promoted. (The alternative was beta's data exported with
+   `npm run export -- --stage beta --out <dir>`, whose `songbook.json` is accepted as `SEED_FILE`.)
 2. **Freeze the seed:** commit it as `data/seed-songbook.json`. It also becomes the round-trip test
    fixture once the parser is gone.
 3. **Retire LaTeX in the same final commits:**
@@ -470,7 +470,7 @@ Defaults are in bold.
    edited "released" date.
 5. **Where the admin portal lives:** **`/admin` on each stage's hostnames** / a separate hostname.
 6. **Prod data at cutover:** **seed from the latest `.tex` on master (beta is a sandbox)** / promote
-   beta's data.
+   beta's data. Decided (2026-10-10): seed from the `.tex`.
 7. **Beta deploys:** **from my machine** / a CI job on this branch. The CI job needs a second OIDC
    role trusting the branch, and that role would be as powerful as master's, because both act
    through the CDK bootstrap roles.
