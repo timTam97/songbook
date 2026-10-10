@@ -2,7 +2,7 @@ import { rmSync } from 'node:fs';
 import { ADMIN_ROUTES } from '@songbook/core';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { afterAll, describe, expect, it } from 'vitest';
-import { stageAuthDomainPrefix } from '../lib/stage.ts';
+import { stageAuthDomain, stageAuthDomainPrefix } from '../lib/stage.ts';
 import { certificateArn, siteStack, testRoot } from './helpers.ts';
 
 afterAll(() => rmSync(testRoot, { recursive: true, force: true }));
@@ -120,5 +120,54 @@ describe('stageAuthDomainPrefix', () => {
     expect(stageAuthDomainPrefix('beta', { BETA_AUTH_DOMAIN_PREFIX: 'my-songs' })).toBe('my-songs');
     expect(() => stageAuthDomainPrefix('beta', { BETA_AUTH_DOMAIN_PREFIX: 'My_Songs' })).toThrow();
     expect(() => stageAuthDomainPrefix('prod', { SITE_AUTH_DOMAIN_PREFIX: 'songs-cognito' })).toThrow();
+  });
+});
+
+describe('stageAuthDomain', () => {
+  it('uses the prefix domain unless a custom hostname and certificate are both set', () => {
+    expect(stageAuthDomain('beta', {})).toEqual({ prefix: 'melbourne-songs-beta' });
+    // CI passes an unset secret as an empty string.
+    expect(stageAuthDomain('prod', { SITE_AUTH_DOMAIN_NAME: '', SITE_AUTH_CERTIFICATE_ARN: '' })).toEqual({ prefix: 'melbourne-songs-prod' });
+    expect(stageAuthDomain('beta', { BETA_AUTH_DOMAIN_NAME: ' Auth.Beta.Songs.Example.com ', BETA_AUTH_CERTIFICATE_ARN: certificateArn })).toEqual({
+      name: 'auth.beta.songs.example.com',
+      certificateArn,
+    });
+    // Each stage reads only its own settings.
+    expect(stageAuthDomain('beta', { SITE_AUTH_DOMAIN_NAME: 'auth.songs.example.com', SITE_AUTH_CERTIFICATE_ARN: certificateArn })).toEqual({
+      prefix: 'melbourne-songs-beta',
+    });
+    expect(() => stageAuthDomain('prod', { SITE_AUTH_DOMAIN_NAME: 'auth.songs.example.com' })).toThrow(/SITE_AUTH_CERTIFICATE_ARN/);
+  });
+});
+
+describe('a custom sign-in domain', () => {
+  const authDomain = { name: 'auth.beta.songs.example.com', certificateArn };
+  const stack = siteStack({ stage: 'beta', domain, authDomain });
+  const custom = Template.fromStack(stack);
+
+  it('replaces the prefix domain, keeping managed login', () => {
+    custom.resourceCountIs('AWS::Cognito::UserPoolDomain', 1);
+    custom.hasResourceProperties('AWS::Cognito::UserPoolDomain', {
+      Domain: 'auth.beta.songs.example.com',
+      CustomDomainConfig: { CertificateArn: certificateArn },
+      ManagedLoginVersion: 2,
+    });
+  });
+
+  it('is the only off-site origin the portal may call, and the one it signs in on', () => {
+    const csp = Object.values(custom.findResources('AWS::CloudFront::ResponseHeadersPolicy'))[0].Properties.ResponseHeadersPolicyConfig
+      .SecurityHeadersConfig.ContentSecurityPolicy.ContentSecurityPolicy;
+    expect(csp).toContain("connect-src 'self' https://auth.beta.songs.example.com;");
+    expect(stack.admin.portalConfig.authOrigin).toBe('https://auth.beta.songs.example.com');
+  });
+
+  it('outputs the CloudFront address to CNAME the hostname to; a prefix domain outputs none', () => {
+    custom.hasOutput('AuthDomainTarget', { Value: { 'Fn::GetAtt': [Match.stringLikeRegexp('^AdminUsersDomain'), 'CloudFrontDistribution'] } });
+    expect(Object.keys(beta.findOutputs('AuthDomainTarget'))).toHaveLength(0);
+  });
+
+  it('needs a certificate in us-east-1', () => {
+    const elsewhere = { name: 'auth.example.com', certificateArn: certificateArn.replace('us-east-1', 'ap-southeast-2') };
+    expect(() => siteStack({ authDomain: elsewhere })).toThrow(/us-east-1/);
   });
 });

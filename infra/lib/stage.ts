@@ -58,3 +58,23 @@ export function stageAuthDomainPrefix(stage: Stage, env: Env): string {
   }
   return prefix;
 }
+
+/**
+ * Where a stage's admin sign-in (Cognito managed login) is hosted: a custom
+ * hostname with its own certificate, or else a Cognito prefix domain.
+ */
+export type AuthDomain = { name: string; certificateArn: string } | { prefix: string };
+
+/**
+ * A custom sign-in hostname comes from SITE_AUTH_DOMAIN_NAME + SITE_AUTH_CERTIFICATE_ARN
+ * (BETA_* for beta), kept out of git like the site's domain. Without them the
+ * stage signs in on its prefix domain (stageAuthDomainPrefix).
+ */
+export function stageAuthDomain(stage: Stage, env: Env): AuthDomain {
+  const prefix = stage === 'prod' ? 'SITE' : 'BETA';
+  const name = env[`${prefix}_AUTH_DOMAIN_NAME`]?.trim().toLowerCase();
+  const certificateArn = env[`${prefix}_AUTH_CERTIFICATE_ARN`]?.trim();
+  if (!name && !certificateArn) return { prefix: stageAuthDomainPrefix(stage, env) };
+  if (!name || !certificateArn) throw new Error(`Set both ${prefix}_AUTH_DOMAIN_NAME and ${prefix}_AUTH_CERTIFICATE_ARN, or neither.`);
+  return { name, certificateArn };
+}

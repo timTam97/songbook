@@ -379,11 +379,15 @@ build, synth) on every push without deploying anything. The OIDC deploy role onl
      didn't move to `core`), the Vite plugin, `melbourne-songs.tex`/`.pdf` and the LaTeX package
      files (Decision 3).
    - Update README, CLAUDE.md and the workflow `paths` filter.
-4. **Rehearse:** deploy beta with `--reset` and the frozen seed, and check it end to end.
+4. **Rehearse:** deploy beta with `--reset` and the frozen seed, and check it end to end. Add the
+   `SITE_AUTH_DOMAIN_NAME` and `SITE_AUTH_CERTIFICATE_ARN` repository secrets (prod's sign-in
+   hostname and its already-issued certificate).
 5. **Merge.** Master CI then deploys prod in place:
    - The distribution and bucket are updated, not replaced.
    - The seed runs into the new empty prod table, and the publisher writes `songbook.json`, all
      before the new `index.html` goes live.
+   - Then CNAME prod's sign-in hostname (DNS only) to the deploy's `AuthDomainTarget` output.
+     Until it resolves only the admin sign-in is down; the public site is unaffected.
 6. **Create the prod admin user,** then smoke-test prod.
 7. **Run the Content export workflow once by hand** (Actions tab) and check that the `content`
    branch now holds prod's `songbook.json`. From then on it runs weekly.
@@ -523,6 +527,11 @@ defaults, except that the git export (Decision 8) runs weekly.
 - **The Cognito domain prefix defaults to `melbourne-songs-<stage>`**, overridable with
   `SITE_AUTH_DOMAIN_PREFIX` / `BETA_AUTH_DOMAIN_PREFIX`. User pools use the Essentials feature
   plan, which managed login needs.
+- **Each stage can sign in on its own hostname instead** (added after milestone 5):
+  `SITE_AUTH_DOMAIN_NAME` + `SITE_AUTH_CERTIFICATE_ARN` (`BETA_*` for beta), a us-east-1
+  certificate per stage. The custom domain replaces the prefix domain; the issuer, and so the
+  API's JWT authorizer, is unchanged. Its DNS CNAME target is the `AuthDomainTarget` output, which
+  only exists after the deploy that creates the domain.
 - **Markup detail:** a chord with no text yet (`[G]` before another chord or at the end of a line)
   carries no formatting, and a bare chord followed by plain text takes that text. This makes
   every canonical line round-trip; `validateSong` rejects lyrics that are not in canonical form,

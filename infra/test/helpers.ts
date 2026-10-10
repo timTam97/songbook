@@ -21,7 +21,7 @@ export const testRoot = root;
 export const fastApp = () => new App({ context: { 'aws:cdk:bundling-stacks': [] } });
 
 export function siteStack(props: Partial<SiteStackProps> = {}, app = fastApp(), id = 'Site'): SiteStack {
-  return new SiteStack(app, id, { env, siteDir, seedFile, stage: 'beta', authDomainPrefix: 'example-auth', ...props });
+  return new SiteStack(app, id, { env, siteDir, seedFile, stage: 'beta', authDomain: { prefix: 'example-auth' }, ...props });
 }
 
 export const certificateArn = 'arn:aws:acm:us-east-1:123456789012:certificate/00000000-0000-0000-0000-000000000000';

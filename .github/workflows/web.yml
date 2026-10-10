@@ -117,6 +117,9 @@ jobs:
         env:
           SITE_DOMAIN_NAME: ${{ secrets.SITE_DOMAIN_NAME }}
           SITE_CERTIFICATE_ARN: ${{ secrets.SITE_CERTIFICATE_ARN }}
+          # Optional: the admin sign-in's own hostname. Unset, it uses the Cognito prefix domain.
+          SITE_AUTH_DOMAIN_NAME: ${{ secrets.SITE_AUTH_DOMAIN_NAME }}
+          SITE_AUTH_CERTIFICATE_ARN: ${{ secrets.SITE_AUTH_CERTIFICATE_ARN }}
         # Only the site. The deploy role's own stack is changed by hand, never by CI.
         run: npx cdk deploy MelbourneSongsSite --require-approval never --outputs-file cdk-outputs.json
 

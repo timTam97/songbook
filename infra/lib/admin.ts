@@ -4,6 +4,7 @@
  * under /api/* on the site's own hostnames, so the portal needs no CORS.
  */
 import { Duration, RemovalPolicy, Stack } from 'aws-cdk-lib';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as apigwv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpJwtAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
@@ -16,13 +17,14 @@ import type * as lambda from 'aws-cdk-lib/aws-lambda';
 import { ADMIN_API_PREFIX, ADMIN_GROUP, ADMIN_ROUTES } from '@songbook/core';
 import { Construct } from 'constructs';
 import { backendFunction } from './song-data.ts';
-import type { Stage } from './stage.ts';
+import type { AuthDomain, Stage } from './stage.ts';
 
 /** The portal's own URLs on a hostname: where Cognito sends the browser back after sign-in and sign-out. */
 export const adminUrls = (origin: string) => ({ callback: `${origin}/admin/callback`, logout: `${origin}/admin` });
 
-/** The Cognito managed-login origin for a domain prefix, which the CSP must let the portal call (token exchange). */
-export const authOrigin = (prefix: string, region: string) => `https://${prefix}.auth.${region}.amazoncognito.com`;
+/** The Cognito managed-login origin, which the CSP must let the portal call (token exchange). */
+export const authOrigin = (domain: AuthDomain, region: string) =>
+  'name' in domain ? `https://${domain.name}` : `https://${domain.prefix}.auth.${region}.amazoncognito.com`;
 
 /** The vite dev server, allowed as a sign-in callback on beta only (see README, "Admin portal"). */
 export const LOCAL_DEV_ORIGIN = 'http://localhost:5173';
@@ -34,8 +36,8 @@ export interface AdminProps {
   hostnames: string[];
   table: dynamodb.ITable;
   publisher: lambda.IFunction;
-  /** Cognito domain prefix, unique within the region (see stageAuthDomainPrefix). */
-  authDomainPrefix: string;
+  /** Where managed login is hosted (see stageAuthDomain). */
+  authDomain: AuthDomain;
   responseHeadersPolicy: cloudfront.IResponseHeadersPolicy;
 }
 
@@ -55,6 +57,8 @@ export class Admin extends Construct {
   readonly api: apigwv2.HttpApi;
   readonly handler: lambda.IFunction;
   readonly portalConfig: PortalConfig;
+  /** The CloudFront address Cognito assigns a custom sign-in domain: its DNS CNAME target. */
+  readonly authDomainTarget?: string;
 
   constructor(scope: Construct, id: string, props: AdminProps) {
     super(scope, id);
@@ -94,10 +98,25 @@ export class Admin extends Construct {
       groupName: ADMIN_GROUP,
       description: 'May edit the songbook through the admin portal',
     });
-    this.userPool.addDomain('Domain', {
-      cognitoDomain: { domainPrefix: props.authDomainPrefix },
+    // A custom hostname needs a us-east-1 certificate (Cognito fronts it with CloudFront) and a
+    // parent domain that resolves. Switching between prefix and custom replaces the domain
+    // resource; a pool may hold one of each, so the old one keeps working until the swap.
+    const { authDomain } = props;
+    if ('name' in authDomain && !/^arn:aws:acm:us-east-1:\d{12}:certificate\/[\w-]+$/.test(authDomain.certificateArn)) {
+      throw new Error('The sign-in domain certificate must be an ACM certificate ARN in us-east-1.');
+    }
+    const domain = this.userPool.addDomain('Domain', {
+      ...('name' in authDomain
+        ? {
+            customDomain: {
+              domainName: authDomain.name,
+              certificate: acm.Certificate.fromCertificateArn(this, 'AuthCertificate', authDomain.certificateArn),
+            },
+          }
+        : { cognitoDomain: { domainPrefix: authDomain.prefix } }),
       managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
     });
+    if ('name' in authDomain) this.authDomainTarget = domain.cloudFrontEndpoint;
 
     const origins_ = [...props.hostnames.map((h) => `https://${h}`), `https://${distribution.distributionDomainName}`];
     if (stage === 'beta') origins_.push(LOCAL_DEV_ORIGIN);
@@ -175,7 +194,7 @@ export class Admin extends Construct {
       userPoolId: this.userPool.userPoolId,
       clientId: this.client.userPoolClientId,
       issuer,
-      authOrigin: authOrigin(props.authDomainPrefix, stack.region),
+      authOrigin: authOrigin(authDomain, stack.region),
     };
   }
 }

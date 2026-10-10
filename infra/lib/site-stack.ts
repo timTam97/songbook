@@ -8,7 +8,7 @@ import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import type { Construct } from 'constructs';
 import { Admin, authOrigin } from './admin.ts';
 import { SONGBOOK_KEY, SongData } from './song-data.ts';
-import type { Stage } from './stage.ts';
+import type { AuthDomain, Stage } from './stage.ts';
 
 /** Where the admin portal reads its sign-in settings, written at deploy time. */
 export const PORTAL_CONFIG_KEY = 'admin-config.json';
@@ -38,8 +38,8 @@ export interface SiteStackProps extends StackProps {
   domain?: SiteDomain;
   /** SeedFile JSON imported into the stage's table on its first deploy. */
   seedFile: string;
-  /** Cognito domain prefix for the admin sign-in (see stageAuthDomainPrefix). */
-  authDomainPrefix: string;
+  /** Where the admin sign-in is hosted (see stageAuthDomain). */
+  authDomain: AuthDomain;
 }
 
 /**
@@ -89,7 +89,7 @@ export class SiteStack extends Stack {
             "default-src 'self'",
             "script-src 'self'",
             // The admin portal exchanges its sign-in code for tokens with Cognito.
-            `connect-src 'self' ${authOrigin(props.authDomainPrefix, this.region)}`,
+            `connect-src 'self' ${authOrigin(props.authDomain, this.region)}`,
             // React sets the lyric size through a style attribute.
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data:",
@@ -157,7 +157,7 @@ export class SiteStack extends Stack {
       hostnames: domain?.names ?? [],
       table: this.data.table,
       publisher: this.data.publisher,
-      authDomainPrefix: props.authDomainPrefix,
+      authDomain: props.authDomain,
       responseHeadersPolicy: headers,
     });
 
@@ -198,6 +198,12 @@ export class SiteStack extends Stack {
     new CfnOutput(this, 'SeedFunctionName', { value: this.data.seeder.functionName });
     new CfnOutput(this, 'PublishFunctionName', { value: this.data.publisher.functionName });
     new CfnOutput(this, 'UserPoolId', { value: this.admin.userPool.userPoolId });
+    if (this.admin.authDomainTarget) {
+      new CfnOutput(this, 'AuthDomainTarget', {
+        value: this.admin.authDomainTarget,
+        description: 'CNAME the sign-in hostname to this (DNS only, not proxied)',
+      });
+    }
     new CfnOutput(this, 'AdminApiId', { value: this.admin.api.apiId });
     new CfnOutput(this, 'AdminFunctionName', { value: this.admin.handler.functionName });
   }

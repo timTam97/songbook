@@ -228,7 +228,7 @@ deploy.
 
 | Optional setting | Meaning |
 | --- | --- |
-| `BETA_AUTH_DOMAIN_PREFIX`, `SITE_AUTH_DOMAIN_PREFIX` | Cognito sign-in domain prefix (default `melbourne-songs-<stage>`); must be unique in the region |
+| `BETA_AUTH_DOMAIN_PREFIX`, `SITE_AUTH_DOMAIN_PREFIX` | Cognito sign-in domain prefix (default `melbourne-songs-<stage>`); must be unique in the region. Not used with a [sign-in hostname](#sign-in-domain) |
 | `SEED_FILE` | Seed the stage from this file instead of the `.tex`: a SeedFile JSON, or a `songbook.json` written by `npm run export` |
 | `DEV_PROXY_TARGET` (in `web/.env.local`) | Point `npm run dev` at a deployed stage, e.g. `https://beta.songs.example.com`: the dev server proxies `/songbook.json`, `/admin-config.json` and `/api` to it |
 
@@ -249,6 +249,28 @@ Remove one with `aws cognito-idp admin-delete-user`. Passwords need 12 or
 more characters; there is no MFA. With beta's `DEV_PROXY_TARGET` set, the
 portal also works from `npm run dev` at `http://localhost:5173/admin` (the
 beta user pool allows that address; prod's does not).
+
+### Sign-in domain
+
+Managed login is served on the stage's Cognito prefix domain
+(`<prefix>.auth.<region>.amazoncognito.com`) unless the stage has its own
+sign-in hostname, kept out of the repo like the site's domain:
+
+| Setting | Value |
+| --- | --- |
+| `SITE_AUTH_DOMAIN_NAME`, `SITE_AUTH_CERTIFICATE_ARN` | Prod's sign-in hostname, e.g. `auth.songs.example.com`, and an ACM certificate for it **in us-east-1** |
+| `BETA_AUTH_DOMAIN_NAME`, `BETA_AUTH_CERTIFICATE_ARN` | The same for beta, e.g. `auth.beta.songs.example.com` |
+
+Set both or neither (CI: repository secrets; locally: `infra/.env.local`).
+The hostname's parent (`songs.example.com` here) must resolve to an IP
+address, which the site's own CNAME already does. To move a stage to its
+own hostname:
+1. Request and DNS-validate the certificate in us-east-1.
+2. Set both settings and deploy. Cognito fronts the hostname with a
+   CloudFront distribution of its own, which can take up to an hour to come
+   up; the old prefix domain keeps working until the deploy swaps it out.
+3. CNAME the hostname (DNS only, not proxied) to the stack's `AuthDomainTarget`
+   output. Sign-in on that stage works once it resolves.
 
 ### The admin portal
 
