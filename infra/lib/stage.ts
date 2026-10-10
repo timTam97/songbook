@@ -44,3 +44,17 @@ export function stageDomain(stage: Stage, env: Env): SiteDomain | undefined {
       'or SITE_NO_DOMAIN=true to deploy without a custom domain.',
   );
 }
+
+/**
+ * The stage's Cognito domain prefix (<prefix>.auth.<region>.amazoncognito.com),
+ * from SITE_AUTH_DOMAIN_PREFIX / BETA_AUTH_DOMAIN_PREFIX, defaulting to
+ * melbourne-songs-<stage>. It must be unique among all Cognito users in the region.
+ */
+export function stageAuthDomainPrefix(stage: Stage, env: Env): string {
+  const name = `${stage === 'prod' ? 'SITE' : 'BETA'}_AUTH_DOMAIN_PREFIX`;
+  const prefix = env[name]?.trim() || `melbourne-songs-${stage}`;
+  if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(prefix) || /aws|amazon|cognito/.test(prefix)) {
+    throw new Error(`${name} must be lowercase letters, digits and hyphens, and may not contain "aws", "amazon" or "cognito".`);
+  }
+  return prefix;
+}

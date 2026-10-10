@@ -63,7 +63,12 @@ export interface SongItem extends Key, SongFields {
   updatedBy: string;
 }
 
-export type HistoryAction = 'import' | 'create' | 'update' | 'revert' | 'restore';
+export type { HistoryAction } from '@songbook/core';
+import type { HistoryAction } from '@songbook/core';
+
+export interface SlugItem extends Key {
+  id: string;
+}
 
 export interface HistoryItem extends Key, SongFields {
   id: string;

@@ -22,9 +22,16 @@ export function slugify(title: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-/** `slugify(title)`, with "-2", "-3", ... appended until `isTaken` says the slug is free. */
+/** Longest slug uniqueSlug produces before any "-2" suffix; validateSong allows 100. */
+export const MAX_GENERATED_SLUG = 80;
+
+/** `slugify(title)`, cut to a word boundary if long, with "-2", "-3", ... appended until `isTaken` says the slug is free. */
 export function uniqueSlug(title: string, isTaken: (slug: string) => boolean): string {
-  const root = slugify(title) || 'song';
+  let root = slugify(title) || 'song';
+  if (root.length > MAX_GENERATED_SLUG) {
+    const cut = root.slice(0, MAX_GENERATED_SLUG + 1);
+    root = (cut.includes('-') ? cut.slice(0, cut.lastIndexOf('-')) : cut.slice(0, MAX_GENERATED_SLUG)).replace(/-+$/, '');
+  }
   if (!isTaken(root)) return root;
   for (let n = 2; ; n++) {
     const candidate = `${root}-${n}`;

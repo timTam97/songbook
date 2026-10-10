@@ -6,8 +6,12 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import type { Construct } from 'constructs';
+import { Admin, authOrigin } from './admin.ts';
 import { SONGBOOK_KEY, SongData } from './song-data.ts';
 import type { Stage } from './stage.ts';
+
+/** Where the admin portal reads its sign-in settings, written at deploy time. */
+export const PORTAL_CONFIG_KEY = 'admin-config.json';
 
 export interface SiteDomain {
   /** Hostnames the site is served on. */
@@ -34,6 +38,8 @@ export interface SiteStackProps extends StackProps {
   domain?: SiteDomain;
   /** SeedFile JSON imported into the stage's table on its first deploy. */
   seedFile: string;
+  /** Cognito domain prefix for the admin sign-in (see stageAuthDomainPrefix). */
+  authDomainPrefix: string;
 }
 
 /**
@@ -60,6 +66,7 @@ function handler(event) {
 export class SiteStack extends Stack {
   readonly distribution: cloudfront.Distribution;
   readonly data: SongData;
+  readonly admin: Admin;
 
   constructor(scope: Construct, id: string, props: SiteStackProps) {
     super(scope, id, props);
@@ -81,6 +88,8 @@ export class SiteStack extends Stack {
           contentSecurityPolicy: [
             "default-src 'self'",
             "script-src 'self'",
+            // The admin portal exchanges its sign-in code for tokens with Cognito.
+            `connect-src 'self' ${authOrigin(props.authDomainPrefix, this.region)}`,
             // React sets the lyric size through a style attribute.
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data:",
@@ -142,6 +151,15 @@ export class SiteStack extends Stack {
     });
 
     this.data = new SongData(this, 'SongData', { stage, bucket, distribution: this.distribution, seedFile: props.seedFile });
+    this.admin = new Admin(this, 'Admin', {
+      stage,
+      distribution: this.distribution,
+      hostnames: domain?.names ?? [],
+      table: this.data.table,
+      publisher: this.data.publisher,
+      authDomainPrefix: props.authDomainPrefix,
+      responseHeadersPolicy: headers,
+    });
 
     // Hashed build assets never change: cache for a year. Old ones are kept
     // (prune: false) so a browser holding the previous index.html still works.
@@ -153,10 +171,13 @@ export class SiteStack extends Stack {
       cacheControl: [s3deploy.CacheControl.fromString('public, max-age=31536000, immutable')],
     });
 
-    // Everything else (index.html, the PDF, ...) must pick up new songs immediately.
+    // Everything else (index.html, the PDF, the portal's settings, ...) must pick up changes immediately.
     // songbook.json belongs to the publisher: a site deploy never uploads or touches it.
     const pages = new s3deploy.BucketDeployment(this, 'DeployPages', {
-      sources: [s3deploy.Source.asset(props.siteDir, { exclude: ['assets', SONGBOOK_KEY] })],
+      sources: [
+        s3deploy.Source.asset(props.siteDir, { exclude: ['assets', SONGBOOK_KEY] }),
+        s3deploy.Source.jsonData(PORTAL_CONFIG_KEY, this.admin.portalConfig),
+      ],
       destinationBucket: bucket,
       exclude: [SONGBOOK_KEY],
       prune: false,
@@ -176,5 +197,8 @@ export class SiteStack extends Stack {
     new CfnOutput(this, 'TableName', { value: this.data.table.tableName });
     new CfnOutput(this, 'SeedFunctionName', { value: this.data.seeder.functionName });
     new CfnOutput(this, 'PublishFunctionName', { value: this.data.publisher.functionName });
+    new CfnOutput(this, 'UserPoolId', { value: this.admin.userPool.userPoolId });
+    new CfnOutput(this, 'AdminApiId', { value: this.admin.api.apiId });
+    new CfnOutput(this, 'AdminFunctionName', { value: this.admin.handler.functionName });
   }
 }

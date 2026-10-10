@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildSongbook, SCHEMA_VERSION } from '../src/book.ts';
 import { compareCodePoints, orderSongs, songOrderKey } from '../src/order.ts';
-import { deriveFirstLine, slugify, uniqueSlug } from '../src/song.ts';
+import { deriveFirstLine, MAX_GENERATED_SLUG, slugify, uniqueSlug } from '../src/song.ts';
 import type { SongFields } from '../src/types.ts';
 
 const song = (title: string, slug = slugify(title), extra: Partial<SongFields> = {}): SongFields => ({
@@ -96,5 +96,12 @@ describe('song helpers', () => {
     expect(uniqueSlug('Same', (s) => taken.has(s))).toBe('same-3');
     expect(uniqueSlug('Fresh', (s) => taken.has(s))).toBe('fresh');
     expect(uniqueSlug('!!!', () => false)).toBe('song');
+  });
+
+  it('keeps generated slugs short, cutting at a word boundary', () => {
+    const slug = uniqueSlug(`${'word '.repeat(30)}end`, () => false);
+    expect(slug.length).toBeLessThanOrEqual(MAX_GENERATED_SLUG);
+    expect(slug).toMatch(/^word(-word)+$/);
+    expect(uniqueSlug('x'.repeat(150), () => false)).toBe('x'.repeat(MAX_GENERATED_SLUG));
   });
 });

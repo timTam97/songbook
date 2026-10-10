@@ -6,7 +6,7 @@ import { App, Tags } from 'aws-cdk-lib';
 import { texSeed } from '../../web/parser/seed.ts';
 import { GithubDeployStack } from '../lib/github-deploy-stack.ts';
 import { SiteStack } from '../lib/site-stack.ts';
-import { resolveStage, STACK_NAMES, stageDomain } from '../lib/stage.ts';
+import { resolveStage, STACK_NAMES, stageAuthDomainPrefix, stageDomain } from '../lib/stage.ts';
 
 // Local, gitignored settings (see README). CI passes the same variables from repository secrets.
 const envFile = fileURLToPath(new URL('../.env.local', import.meta.url));
@@ -49,6 +49,7 @@ new SiteStack(app, STACK_NAMES[stage], {
   siteDir,
   domain: stageDomain(stage, process.env),
   seedFile: seedFile(),
+  authDomainPrefix: stageAuthDomainPrefix(stage, process.env),
   description: stage === 'prod' ? 'Melbourne Songs web app (S3 + CloudFront)' : `Melbourne Songs web app, ${stage} stage (S3 + CloudFront + DynamoDB)`,
   tags: { stage },
 });
