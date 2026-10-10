@@ -21,6 +21,7 @@
     "deploy:beta": "VITE_STAGE=beta npm run build -w web && npm run deploy -w infra -- MelbourneSongsBeta",
     "seed": "npm run seed -w backend --",
     "republish": "npm run republish -w backend --",
-    "check:published": "npm run check:published -w backend --"
+    "check:published": "npm run check:published -w backend --",
+    "export": "npm run export -w backend --"
   }
 }

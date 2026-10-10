@@ -203,9 +203,11 @@ The design and its decisions are in
   `index.html` goes live. It refuses to publish an empty or invalid book. A
   site deploy never touches `songbook.json`.
 - **The seed** fills an empty table on a stage's first deploy, from
-  `melbourne-songs.tex` parsed at synth time (or `SEED_FILE`, a SeedFile
-  JSON). It checks every song first, and is a no-op once the table holds a
-  book.
+  `melbourne-songs.tex` parsed at synth time (or `SEED_FILE`: a SeedFile
+  JSON, or a `songbook.json` from the export below). It checks every song
+  first, and is a no-op once the table holds a book.
+- **The weekly export** commits prod's `songbook.json` to the `content`
+  branch: see [Export to git](#export-to-git).
 
 ### Beta
 
@@ -227,7 +229,7 @@ deploy.
 | Optional setting | Meaning |
 | --- | --- |
 | `BETA_AUTH_DOMAIN_PREFIX`, `SITE_AUTH_DOMAIN_PREFIX` | Cognito sign-in domain prefix (default `melbourne-songs-<stage>`); must be unique in the region |
-| `SEED_FILE` | Seed the stage from this SeedFile JSON instead of the `.tex` |
+| `SEED_FILE` | Seed the stage from this file instead of the `.tex`: a SeedFile JSON, or a `songbook.json` written by `npm run export` |
 | `DEV_PROXY_TARGET` (in `web/.env.local`) | Point `npm run dev` at a deployed stage, e.g. `https://beta.songs.example.com`: the dev server proxies `/songbook.json`, `/admin-config.json` and `/api` to it |
 
 ### Editors
@@ -274,3 +276,26 @@ Lyrics are plain text:
 | `*words*`, `**words**` | Italic, bold |
 | `[G]` | A chord over the text that follows |
 | `\*`, `\[`, `\{`, `\\` | A literal `*`, `[`, `{` or `\` |
+
+### Export to git
+
+Once a week (Monday about 03:17 in Melbourne), the Content export workflow
+(`.github/workflows/content-export.yml`) commits prod's public `songbook.json`
+to the `content` branch, if it has changed since the last export. That
+branch holds only the book and a README, so `git log -p content` is the
+book's edit history, and the file is a backup outside AWS. The workflow reads
+the site's address from the `SITE_DOMAIN_NAME` secret and needs nothing else.
+Run it by hand from the Actions tab to export now. Like every scheduled
+workflow it only runs from master, so it starts at the cutover.
+
+The export refuses an error page, a truncated file or a book the seed would
+reject, so every commit on `content` can re-seed a table:
+
+```bash
+npm run export -- --stage beta --out .tmp/export       # the same check and file, for any stage
+git show origin/content:songbook.json > .tmp/songbook.json
+SEED_FILE=.tmp/songbook.json npm run deploy:beta       # seeds a stage whose table is empty
+```
+
+Point-in-time recovery (35 days) is still the first way back for prod; the
+export covers losing the table or the account.

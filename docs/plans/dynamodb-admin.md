@@ -1,8 +1,8 @@
 # Plan: DynamoDB as the songbook's source of truth, plus an admin portal
 
-Status: milestones 1-4 implemented on branch `feat/dynamodb-admin` (cut from `master` at 145326a)
+Status: milestones 1-5 implemented on branch `feat/dynamodb-admin` (cut from `master` at 145326a)
 and deployed to beta; see [Implementation notes](#implementation-notes) for where the build
-differs from this plan. Milestone 5 and the cutover have not started.
+differs from this plan. The cutover has not started.
 
 ## Goal
 
@@ -356,7 +356,7 @@ The portal uses the same Tailwind setup and theme as the public app.
 | 2 | Stage-aware stack (prod logical IDs preserved, prod guard), beta cert + DNS, table, seed + publish Lambdas, public app reads `/songbook.json` | the beta hostname serves the current songbook from DynamoDB, identical to prod | 4-5 h |
 | 3 | Cognito, admin API, `/api/*` behaviour, admin list/editor/preview | `/admin` on beta: log in, edit, see it published | ~1 day |
 | 4 | History, diff, revert, publish status, book settings, README | full admin portal on beta | 2-3 h |
-| 5 (optional) | Nightly GitHub Action committing prod's public `songbook.json` to a `content` branch (git-diff history and an off-AWS backup); enabled at cutover | none | 1 h |
+| 5 (optional) | Weekly GitHub Action committing prod's public `songbook.json` to a `content` branch (git-diff history and an off-AWS backup); enabled at cutover | none | 1 h |
 
 About 1.5-2 days of my work in total. Master doesn't change at any point.
 
@@ -366,7 +366,8 @@ build, synth) on every push without deploying anything. The OIDC deploy role onl
 ## Cutover to production (only when you decide)
 
 1. **Choose the prod data source (Decision 6):** the latest `.tex` on master (default; beta stays a
-   sandbox), or beta's data exported with `npm run seed:export -- --stage beta`.
+   sandbox), or beta's data exported with `npm run export -- --stage beta --out <dir>` (its
+   `songbook.json` is accepted as `SEED_FILE`).
 2. **Freeze the seed:** commit it as `data/seed-songbook.json`. It also becomes the round-trip test
    fixture once the parser is gone.
 3. **Retire LaTeX in the same final commits:**
@@ -384,6 +385,8 @@ build, synth) on every push without deploying anything. The OIDC deploy role onl
    - The seed runs into the new empty prod table, and the publisher writes `songbook.json`, all
      before the new `index.html` goes live.
 6. **Create the prod admin user,** then smoke-test prod.
+7. **Run the Content export workflow once by hand** (Actions tab) and check that the `content`
+   branch now holds prod's `songbook.json`. From then on it runs weekly.
 
 Afterwards, beta can stay as a staging environment or be torn down (the table and user pool are
 retained and need deleting by hand).
@@ -467,7 +470,7 @@ Defaults are in bold.
 7. **Beta deploys:** **from my machine** / a CI job on this branch. The CI job needs a second OIDC
    role trusting the branch, and that role would be as powerful as master's, because both act
    through the CDK bootstrap roles.
-8. **Git backup export (milestone 5):** **yes** / no.
+8. **Git backup export (milestone 5):** **yes** / no. Decided: yes, weekly rather than nightly.
 9. **Local admin dev against beta's API** (adds a `localhost` callback URL to the beta pool only):
    **yes** / no.
 
@@ -491,7 +494,7 @@ Defaults are in bold.
 ## Implementation notes
 
 What the build does differently from the plan above, and why. The decisions all took their
-defaults.
+defaults, except that the git export (Decision 8) runs weekly.
 
 - **Publish status lives in `BOOK/PUBLISH`, not on `META`.** The stream triggers a publish on `META`
   changes (book title, and every edit bumps `META.updatedAt`), so the publisher writing its own
@@ -525,3 +528,12 @@ defaults.
   every canonical line round-trip; `validateSong` rejects lyrics that are not in canonical form,
   and `normalizeSongInput` produces it.
 - **Generated slugs are capped at 80 characters**, cut at a word boundary.
+- **The git export runs weekly** (Mondays about 03:17 Melbourne time), not nightly, by choice
+  (Decision 8). It fetches prod's public `songbook.json` through the site (address from the existing
+  `SITE_DOMAIN_NAME` secret, masked in the logs), so it needs no AWS role. `npm run export` does
+  the fetch and check: it refuses an error page, a truncated file or a book the seed's own check
+  rejects, and pretty-prints the book so diffs show changed lines. The workflow commits only when
+  the file changed, to an orphan `content` branch holding just the book and a README.
+- **`SEED_FILE` also accepts a published `songbook.json`** (wrapped as a SeedFile at synth), so an
+  export restores with one setting. This replaces the `seed:export` script the cutover section
+  mentioned: `npm run export -- --stage beta` is that script.

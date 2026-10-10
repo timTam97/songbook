@@ -1,0 +1,89 @@
+# Weekly backup of the live songbook to git: commits prod's public
+# songbook.json to the `content` branch (an orphan branch holding only that
+# file and a README) when it has changed since the last export. The branch is
+# an off-AWS copy of the book, and its log is the book's edit history.
+#
+# Schedules only run from master, so this starts at the cutover. Run it by hand
+# from the Actions tab to export now.
+name: Content export
+
+on:
+  schedule:
+    # Sundays 16:17 UTC: Monday 03:17 in Melbourne (02:17 in winter).
+    - cron: '17 16 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: content-export
+  cancel-in-progress: false
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # push the content branch
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Export the live songbook
+        # A secret, so the domain is masked in the public logs (as in web.yml).
+        env:
+          SITE_DOMAIN_NAME: ${{ secrets.SITE_DOMAIN_NAME }}
+        run: |
+          host=${SITE_DOMAIN_NAME%%,*}
+          if [ -z "$host" ]; then
+            echo "::error::The SITE_DOMAIN_NAME secret is not set."
+            exit 1
+          fi
+          echo "::add-mask::$host"
+          npm run export -- --url "https://$host" --out "$RUNNER_TEMP/export"
+
+      - name: Switch to the content branch
+        run: |
+          if git ls-remote --exit-code --heads origin content > /dev/null; then
+            git fetch --no-tags --depth=1 origin +refs/heads/content:refs/remotes/origin/content
+            git switch -c content origin/content
+          else
+            status=$?
+            # 2: no such branch, so this is the first export. Anything else is a real failure.
+            if [ "$status" -ne 2 ]; then exit "$status"; fi
+            git switch --orphan content
+          fi
+
+      - name: Commit and push if the book changed
+        run: |
+          cp "$RUNNER_TEMP/export/songbook.json" songbook.json
+          cat > README.md <<'EOF'
+          # Melbourne Songs: content
+
+          The live songbook, as the public site serves it (`songbook.json`). The
+          weekly Content export workflow on master commits it here whenever it has
+          changed, so this branch's log is the book's edit history and the file is
+          a backup outside AWS. Do not edit this branch by hand.
+
+          To restore, deploy a stage whose table is empty with
+          `SEED_FILE=songbook.json` (see the README on master).
+          EOF
+          git add songbook.json README.md
+          songs=$(node -p "require('./songbook.json').songs.length")
+          edited=$(node -p "require('./songbook.json').updatedAt")
+          if git diff --cached --quiet; then
+            echo "No change since the last export: $songs songs, last edited $edited." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' \
+            -c user.email='41898783+github-actions[bot]@users.noreply.github.com' \
+            commit -q -m "Export the songbook: $songs songs, last edited $edited"
+          git push origin content
+          echo "Exported $songs songs (last edited $edited) as $(git rev-parse --short HEAD) on content." >> "$GITHUB_STEP_SUMMARY"

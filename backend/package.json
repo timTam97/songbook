@@ -8,6 +8,7 @@
     "seed": "tsx scripts/seed.ts",
     "republish": "tsx scripts/republish.ts",
     "check:published": "tsx scripts/check-published.ts",
+    "export": "tsx scripts/export.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
