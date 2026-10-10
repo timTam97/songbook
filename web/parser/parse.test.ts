@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { SongbookParseError } from './latex.ts';
-import { parseSongbook, slugify } from './parse.ts';
-import type { Line } from './types.ts';
+import type { Line } from '@songbook/core';
+import { parseSongbook } from './parse.ts';
 
 const TEX_PATH = fileURLToPath(new URL('../../melbourne-songs.tex', import.meta.url));
 
@@ -174,14 +174,6 @@ describe('parseSongbook: lyrics', () => {
 
   it('fails loudly on text outside a verse', () => {
     expect(() => parseSongbook(doc(song('T', 'stray words\n\\begin{SBVerse}x\\end{SBVerse}')))).toThrow(/text outside a verse/);
-  });
-});
-
-describe('slugify', () => {
-  it('produces URL-safe slugs', () => {
-    expect(slugify('And Is It So! I Shall Be Like Thy Son?')).toBe('and-is-it-so-i-shall-be-like-thy-son');
-    expect(slugify('There’s A Hill Lone And Gray')).toBe('theres-a-hill-lone-and-gray');
-    expect(slugify('Café Déjà Vu')).toBe('cafe-deja-vu');
   });
 });
 

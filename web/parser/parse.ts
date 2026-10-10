@@ -9,7 +9,7 @@ import {
   skipSpace,
   stripComments,
 } from './latex.ts';
-import type { Section, SectionKind, Song, SongRef, Songbook } from './types.ts';
+import { deriveFirstLine, slugify, type Section, type SectionKind, type Song, type SongRef, type Songbook } from '@songbook/core';
 
 /** Lyric environments from songbook.sty and how they appear on the web. */
 const SECTION_ENVS: Record<string, { kind: SectionKind; counted: boolean }> = {
@@ -37,16 +37,6 @@ const IGNORED_BODY_COMMANDS: Record<string, number> = {
   'vspace*': 1,
   SBBridge: 1, // chords-only in songbook.sty
 };
-
-export function slugify(title: string): string {
-  return title
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/['’‘]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
 
 function findEnvEnd(text: string, env: string, from: number): number {
   // Environments of the same name could nest; songbook's don't in practice, but count anyway.
@@ -255,12 +245,7 @@ export function parseSongbook(tex: string): Songbook {
     if (song.sections.length === 0) {
       throw new SongbookParseError(`song "${songTitle}" has no verses`, lineAt(text, start));
     }
-    const first = song.sections[0].lines[0];
-    song.firstLine = first
-      .map((seg) => seg.text)
-      .join('')
-      .replace(/\u00A0/g, ' ')
-      .replace(/[\s,;:]+$/, '');
+    song.firstLine = deriveFirstLine(song.sections);
     songs.push(song);
   }
 

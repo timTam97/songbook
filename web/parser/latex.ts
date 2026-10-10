@@ -1,4 +1,4 @@
-import type { Line, Segment } from './types.ts';
+import type { Line, Segment } from '@songbook/core';
 
 /**
  * Marks "a comment ate this end-of-line". TeX's `%` swallows the newline, so

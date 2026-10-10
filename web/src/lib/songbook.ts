@@ -1,8 +1,7 @@
-import type { Line, Song, Songbook } from '../../parser/types.ts';
+import { lineText, type Song, type Songbook } from '@songbook/core';
 
-export type { Line, Section, Segment, Song, Songbook } from '../../parser/types.ts';
-
-export const lineText = (line: Line): string => line.map((seg) => seg.text).join('');
+export type { Line, Section, Segment, Song, Songbook } from '@songbook/core';
+export { lineText };
 
 export const songText = (song: Song): string =>
   song.sections.map((section) => section.lines.map(lineText).join('\n')).join('\n');
