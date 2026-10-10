@@ -26,6 +26,11 @@ Then recompile to include the indexes.
 
 ## Adding Songs
 
+On this branch the web app's songs come from DynamoDB and are edited in the
+[admin portal](#song-data-and-the-admin-portal). Edits to the `.tex` change
+the PDF, and reach beta only when it is re-seeded
+(`npm run seed -- --stage beta --reset --yes`).
+
 Add songs before `\end{document}` in `melbourne-songs.tex` using:
 
 ```latex
@@ -48,11 +53,14 @@ Add songs before `\end{document}` in `melbourne-songs.tex` using:
 ## Structure
 
 ```
-melbourne-songs.tex    # Main songbook source (source of truth for the PDF and the web app)
+melbourne-songs.tex    # Songbook source: the PDF, and the seed for each stage's song table until the cutover
 melbourne-songs.pdf    # Compiled output (the site serves CI's own build instead)
 songbook.sty           # LaTeX style (required)
-web/                   # Web app, generated from melbourne-songs.tex at build time
-infra/                 # AWS CDK app that hosts the web app (S3 + CloudFront)
+core/                  # Song model, editor markup, validation and book order (shared TypeScript)
+backend/               # Lambdas (seed, publish, admin API) and scripts that drive a deployed stage
+web/                   # Public web app and the admin portal (/admin)
+infra/                 # AWS CDK app: S3 + CloudFront, DynamoDB, Lambdas, Cognito, HTTP API
+docs/plans/            # Design of the DynamoDB migration and admin portal
 .github/workflows/     # CI: rebuilds the PDF and web app and redeploys on every push to master
 samples/               # Original Songbook 4.3 examples
 contrib/               # Utilities (chord diagrams, transposition)
@@ -62,14 +70,17 @@ Built using the [Songbook 4.3](http://www.rath.ca/Misc/Songbook/) LaTeX package.
 
 ## Web app
 
-The web app lets people search, browse and read the songs. It has no song
-data of its own: at build time `web/parser/` reads `melbourne-songs.tex`, so
-editing the `.tex` file and pushing to `master` updates the site.
+The web app lets people search, browse and read the songs. On this branch
+it loads them from `/songbook.json`, which a Lambda publishes from DynamoDB
+whenever an editor saves a song in the admin portal (see
+[Song data and the admin portal](#song-data-and-the-admin-portal)). Until the
+cutover, each stage's table is seeded once from `melbourne-songs.tex`.
 
-- **Hymn numbers match the PDF.** A song's number is its position among the
-  `\begin{song}` blocks that are not commented out, the same counter
-  `songbook.sty` prints. Songs excluded with `\begin{song}[N]` still use up a
-  number, as they do in the PDF.
+- **Hymn numbers are alphabetical positions.** A song's number is its place
+  in the book's alphabetical order (titles lowercased, compared by code
+  point, as `sort_songs.py` sorts the `.tex`). That reproduces every number
+  in the current PDF, but adding, deleting or renaming a song renumbers the
+  songs after it.
 - **Get to a hymn by number:** type the number in the `#` box, or just type it
   anywhere on the site. The hymn opens as soon as the number is unambiguous
   ("25" at once; "2" after a one-second pause in case "25" is coming). You
@@ -99,20 +110,31 @@ Requires Node.js 22+.
 
 ```bash
 npm install
-npm run dev        # http://127.0.0.1:5173, reloads when melbourne-songs.tex changes
+npm run dev        # http://127.0.0.1:5173; /songbook.json is the .tex, re-read on every load
 npm run parse      # check the .tex parses; `npm run parse -- out.json` dumps the data
-npm test           # parser, search and CDK tests
+npm test           # core, backend (Lambdas), web and CDK tests
+npm run typecheck
 npm run build      # production build in web/dist
 ```
 
+The workspaces: `core/` (the song model, editor markup, validation and book
+order, shared by everything), `backend/` (the Lambdas and the scripts that
+drive a deployed stage), `web/` (the public site and the admin portal) and
+`infra/` (the CDK app).
+
 ### Deploy
 
-Pushes to `master` that touch the songbook, `web/` or `infra/` run
-`.github/workflows/web.yml`. It parses, tests, compiles the PDF (TeX Live
-from Ubuntu's packages) and builds, then deploys with `cdk deploy`, using a
-GitHub OIDC role (no stored AWS keys). Pull requests run the same checks
-without deploying; each run attaches the compiled PDF as the
-`melbourne-songs-pdf` artifact, so a PR's PDF can be checked before merging.
+Pushes to `master` that touch the songbook, `core/`, `backend/`, `web/` or
+`infra/` run `.github/workflows/web.yml`. It parses, tests, compiles the PDF
+(TeX Live from Ubuntu's packages) and builds, then deploys the **prod** stage
+with `cdk deploy`, using a GitHub OIDC role (no stored AWS keys). Pull
+requests run the same checks without deploying; each run attaches the
+compiled PDF as the `melbourne-songs-pdf` artifact, so a PR's PDF can be
+checked before merging.
+
+The CDK app builds the prod stage (`MelbourneSongsSite`) **only in CI on
+master**. Everywhere else, a laptop included, it builds the beta stage
+(`MelbourneSongsBeta`), so nothing outside master can deploy production.
 
 One-time setup, already done for this repo (region `ap-southeast-2`):
 
@@ -127,17 +149,18 @@ gh variable set AWS_DEPLOY_ROLE_ARN --body <DeployRoleArn output>
 The deploy role reuses the account's existing GitHub OIDC provider. In an
 account without one, deploy with `-c createGithubOidcProvider=true`.
 
-Manual deploy from a laptop: `npm run deploy` (after `aws sso login`).
+Deploy beta from a laptop: `npm run deploy:beta` (after `aws sso login`).
 
 ### Custom domain
 
 The domain and its certificate are deliberately kept out of the repo. The
-CDK app reads them from two settings:
+CDK app reads them from two settings per stage:
 
 | Setting | Value |
 | --- | --- |
-| `SITE_DOMAIN_NAME` | Hostname(s), comma-separated for more than one, e.g. `songs.example.com,files.example.com` |
-| `SITE_CERTIFICATE_ARN` | ACM certificate covering **every** name, **in us-east-1** (a CloudFront requirement) |
+| `SITE_DOMAIN_NAME` | Prod hostname(s), comma-separated for more than one, e.g. `songs.example.com,files.example.com` |
+| `SITE_CERTIFICATE_ARN` | ACM certificate covering **every** prod name, **in us-east-1** (a CloudFront requirement) |
+| `BETA_DOMAIN_NAME`, `BETA_CERTIFICATE_ARN` | The same for the beta stage, e.g. `beta.songs.example.com` |
 
 - **CI:** repository *secrets* (not variables, so they are masked in public logs).
 - **Locally:** `infra/.env.local`, which is gitignored:
@@ -157,3 +180,97 @@ To add or move to a new domain:
 2. Update both settings and deploy. CloudFront swaps the certificate in place,
    so the existing names stay up.
 3. Point each new name's CNAME at the distribution's `*.cloudfront.net` address (DNS only, not proxied).
+
+## Song data and the admin portal
+
+```
+Admin browser (/admin) --ID token--> CloudFront /api/* --> HTTP API (JWT authorizer) --> admin Lambda --> DynamoDB
+                                                                                                           | stream
+Public browser --> CloudFront --> S3: index.html, assets/, songbook.json <-- publish Lambda <-------------+
+```
+
+Each stage (prod, beta) has its own table, user pool, API, Lambdas, bucket
+and distribution, all from the same stack class, so beta runs what prod will.
+The design and its decisions are in
+[docs/plans/dynamodb-admin.md](docs/plans/dynamodb-admin.md).
+
+- **The table** holds the current songs, every saved version, a 30-day copy
+  of each deleted song, slug reservations and the book's title. It has
+  point-in-time recovery and deletion protection, and is kept if the stack is
+  deleted.
+- **The publisher** rebuilds `songbook.json` (numbering the songs
+  alphabetically) within seconds of a save, and on each deploy before the new
+  `index.html` goes live. It refuses to publish an empty or invalid book. A
+  site deploy never touches `songbook.json`.
+- **The seed** fills an empty table on a stage's first deploy, from
+  `melbourne-songs.tex` parsed at synth time (or `SEED_FILE`, a SeedFile
+  JSON). It checks every song first, and is a no-op once the table holds a
+  book.
+
+### Beta
+
+Beta is the sandbox for this branch, marked with a Beta badge and kept out of
+search engines (`X-Robots-Tag: noindex`). Its settings go in
+`infra/.env.local` (see [Custom domain](#custom-domain); without them set
+`SITE_NO_DOMAIN=true` to serve on its `*.cloudfront.net` address only).
+
+```bash
+npm run deploy:beta                                # build with the Beta badge, then cdk deploy MelbourneSongsBeta
+npm run check:published -- --stage beta            # is beta's songbook.json exactly the parsed .tex?
+npm run seed -- --stage beta --reset --yes         # discard beta's edits and re-import the .tex
+npm run republish -- --stage beta                  # rebuild songbook.json now
+```
+
+`seed` refuses to run against prod, whose table is seeded once by its first
+deploy.
+
+| Optional setting | Meaning |
+| --- | --- |
+| `BETA_AUTH_DOMAIN_PREFIX`, `SITE_AUTH_DOMAIN_PREFIX` | Cognito sign-in domain prefix (default `melbourne-songs-<stage>`); must be unique in the region |
+| `SEED_FILE` | Seed the stage from this SeedFile JSON instead of the `.tex` |
+| `DEV_PROXY_TARGET` (in `web/.env.local`) | Point `npm run dev` at a deployed stage, e.g. `https://beta.songs.example.com`: the dev server proxies `/songbook.json`, `/admin-config.json` and `/api` to it |
+
+### Editors
+
+Editors sign in at `/admin` on the stage's site. There is no sign-up: add an
+editor with the stage's `UserPoolId` (a stack output). Cognito emails them a
+temporary password, which they change on first sign-in.
+
+```bash
+POOL=<UserPoolId output>
+aws cognito-idp admin-create-user --user-pool-id "$POOL" --username editor@example.com \
+  --user-attributes Name=email,Value=editor@example.com Name=email_verified,Value=true
+aws cognito-idp admin-add-user-to-group --user-pool-id "$POOL" --username editor@example.com --group-name admins
+```
+
+Remove one with `aws cognito-idp admin-delete-user`. Passwords need 12 or
+more characters; there is no MFA. With beta's `DEV_PROXY_TARGET` set, the
+portal also works from `npm run dev` at `http://localhost:5173/admin` (the
+beta user pool allows that address; prod's does not).
+
+### The admin portal
+
+- **Songs:** the book in order, with each song's number, a filter, and
+  whether the public site has caught up with the latest edit (with a
+  Republish button if a publish is stuck).
+- **Editor:** the song's details and lyrics, with a live preview. It shows
+  when a title change will renumber the song, refuses to save over someone
+  else's newer save (and keeps your text), and warns before you leave with
+  unsaved changes. A song's *link name* (slug) is what keeps shared links
+  working when numbers change, so change it only if you must.
+- **History:** every saved version, how it differs from the current one, and
+  Revert (which saves the old content as a new version).
+- **Recently deleted:** deleted songs can be restored for 30 days. After
+  that, point-in-time recovery (35 days) is the way back.
+- **Book:** the book's title.
+
+Lyrics are plain text:
+
+| Write | For |
+| --- | --- |
+| A blank line | A new verse; verses are numbered for you |
+| `{chorus}` as a block's first line | A chorus |
+| `{verse*}` | An unnumbered verse (`{part}` / `{part*}`: lettered / unlettered parts) |
+| `*words*`, `**words**` | Italic, bold |
+| `[G]` | A chord over the text that follows |
+| `\*`, `\[`, `\{`, `\\` | A literal `*`, `[`, `{` or `\` |

@@ -1,6 +1,8 @@
 # Plan: DynamoDB as the songbook's source of truth, plus an admin portal
 
-Status: draft for review. Branch `feat/dynamodb-admin`, cut from `master` at 145326a.
+Status: milestones 1-4 implemented on branch `feat/dynamodb-admin` (cut from `master` at 145326a)
+and deployed to beta; see [Implementation notes](#implementation-notes) for where the build
+differs from this plan. Milestone 5 and the cutover have not started.
 
 ## Goal
 
@@ -485,3 +487,41 @@ Defaults are in bold.
   in the admin portal.
 - **Git as the review step is lost:** replaced by per-edit history with revert, PITR, and optionally
   the git export.
+
+## Implementation notes
+
+What the build does differently from the plan above, and why. The decisions all took their
+defaults.
+
+- **Publish status lives in `BOOK/PUBLISH`, not on `META`.** The stream triggers a publish on `META`
+  changes (book title, and every edit bumps `META.updatedAt`), so the publisher writing its own
+  status there would trigger itself. The stream's event filter passes only `SONG` and `BOOK/META`.
+  A stream-triggered publish also skips a book whose hash is unchanged; deploy, API and script
+  publishes always write.
+- **The seed and publish triggers run on a stage's first deploy and whenever their code changes,**
+  which is what CDK `Trigger` offers, rather than on every deploy. The seed is a no-op after the
+  first run anyway, and a bundle change (core included) republishes. `npm run seed` and
+  `npm run republish` run them on demand.
+- **The seed writes `META` last** and resumes an interrupted run (a song whose slug is already
+  reserved was imported). The publisher publishes nothing until `META` exists, so it never sees a
+  half-seeded table. `--reset` deletes `META` first for the same reason.
+- **The portal calls the API with the ID token,** not the access token: Cognito's access token has
+  no email, and `updatedBy`/`changedBy` should name the editor. The HTTP API authorizer checks
+  its audience (the portal's client ID) and issuer; the Lambda checks the `admins` group.
+- **CloudFront forwards `Authorization`** under `CachingDisabled` + `AllViewerExceptHostHeader`
+  (checked on beta), so the `X-Admin-Token` fallback was not needed.
+- **API additions:** `GET /book` (book title and publish status, for the Book page), an optional
+  `{ slug }` body on restore for when the old slug has been taken, and revert keeps the song's
+  current slug (links stay stable). The contract is in `core/src/api.ts`.
+- **The portal's sign-in settings** (user pool, client, Cognito domain) are written to
+  `/admin-config.json` by the pages deployment at deploy time, so the build needs no stack outputs.
+  oidc-client-ts gets explicit endpoints, so no discovery request is needed and the CSP adds only
+  the Cognito domain to `connect-src`.
+- **The Cognito domain prefix defaults to `melbourne-songs-<stage>`**, overridable with
+  `SITE_AUTH_DOMAIN_PREFIX` / `BETA_AUTH_DOMAIN_PREFIX`. User pools use the Essentials feature
+  plan, which managed login needs.
+- **Markup detail:** a chord with no text yet (`[G]` before another chord or at the end of a line)
+  carries no formatting, and a bare chord followed by plain text takes that text. This makes
+  every canonical line round-trip; `validateSong` rejects lyrics that are not in canonical form,
+  and `normalizeSongInput` produces it.
+- **Generated slugs are capped at 80 characters**, cut at a word boundary.
