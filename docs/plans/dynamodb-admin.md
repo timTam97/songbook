@@ -372,14 +372,20 @@ build, synth) on every push without deploying anything. The OIDC deploy role onl
    fixture once the parser is gone.
 3. **Retire LaTeX in the same final commits:**
    - Tag master's head as `latex-final`.
-   - Freeze the currently live PDF (the CI build) as `web/public/melbourne-songs.pdf` and link it as
-     "Printed edition (Dec 2025)", with a note that later changes aren't in it (Decision 1). Its
-     numbers stop matching the site after the first add, delete or rename that changes the order.
+   - Keep the PDF that is live today at its current URL, `/melbourne-songs.pdf`, on every site
+     hostname (Decision 1). Download it from prod right before the final commit and commit those
+     exact bytes as `web/public/melbourne-songs.pdf`. Record its sha256 in the commit message. Don't
+     use the root `melbourne-songs.pdf` in git: it's a different, older file (on 2026-10-12 the live
+     file's sha256 began `eaa94bf9` and the committed one `8f2eb7e2`).
+   - Link it as "Printed edition (<its Last Revised date>)", currently 11 April 2026, with a note
+     that later changes aren't in it. Its numbers stop matching the site after the first add,
+     delete or rename that changes the order.
    - Remove the TeX steps from `.github/workflows/web.yml`, along with `web/parser/` (whatever
      didn't move to `core`), the Vite plugin, `melbourne-songs.tex`/`.pdf` and the LaTeX package
      files (Decision 3).
    - Update README, CLAUDE.md and the workflow `paths` filter.
-4. **Rehearse:** deploy beta with `--reset` and the frozen seed, and check it end to end. Add the
+4. **Rehearse:** deploy beta with `--reset` and the frozen seed, and check it end to end, including
+   that beta's `/melbourne-songs.pdf` has the recorded sha256. Add the
    `SITE_AUTH_DOMAIN_NAME` and `SITE_AUTH_CERTIFICATE_ARN` repository secrets (prod's sign-in
    hostname and its already-issued certificate).
 5. **Merge.** Master CI then deploys prod in place:
@@ -388,12 +394,28 @@ build, synth) on every push without deploying anything. The OIDC deploy role onl
      before the new `index.html` goes live.
    - Then CNAME prod's sign-in hostname (DNS only) to the deploy's `AuthDomainTarget` output.
      Until it resolves only the admin sign-in is down; the public site is unaffected.
-6. **Create the prod admin user,** then smoke-test prod.
+6. **Create the prod admin user,** then smoke-test prod. The smoke test includes
+   `/melbourne-songs.pdf` on each hostname: it returns 200 `application/pdf` with the recorded
+   sha256. Also check that `/melbourne-songs-v0.1.pdf` still loads.
 7. **Run the Content export workflow once by hand** (Actions tab) and check that the `content`
    branch now holds prod's `songbook.json`. From then on it runs weekly.
 
 Afterwards, beta can stay as a staging environment or be torn down (the table and user pool are
 retained and need deleting by hand).
+
+**Later, not part of the cutover: redirect the PDF URL to the site.** At some point after the
+cutover, `/melbourne-songs.pdf` is to redirect to the songs site's home page. When that happens:
+
+- Do it in the routing CloudFront function, so the redirect is returned before the request reaches
+  the bucket. Deleting the file alone isn't enough: `DeployPages` runs with `prune: false`, so the
+  old object would stay in the bucket and keep being served.
+- `Location: /` keeps a visitor on whichever hostname they used. To send everyone to the songs
+  hostname, the function needs that absolute URL. Build it at synth time from `SITE_DOMAIN_NAME`, so
+  no hostname is committed to git.
+- Remove the footer link in `web/src/components/Layout.tsx` and the `<noscript>` link in
+  `web/index.html` in the same change.
+- Start with a 302. Browsers cache a 301 indefinitely, so switch to 301 only once it's final. The
+  PDF is served with `max-age=0`, so a redirect takes effect as soon as it's deployed.
 
 ## Testing
 
@@ -460,7 +482,9 @@ the 1,000 free paths a month. PITR is billed on table size, which is under 1 MB 
 Defaults are in bold.
 
 1. **PDF after retirement:** **freeze the live PDF as a legacy download** / drop it / add a print
-   stylesheet later.
+   stylesheet later. Decided (2026-10-12): freeze it, keep serving the exact live file at
+   `/melbourne-songs.pdf`, and redirect that URL to the site later (see the end of the cutover
+   section).
 2. **Safety copy of a hard-deleted song:** **keep it for 30 days, restorable from the admin
    portal** / purge everything immediately (point-in-time recovery is then the only way back, for
    35 days).
