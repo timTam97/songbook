@@ -2,7 +2,8 @@
 
 Status: milestones 1-5 implemented on branch `feat/dynamodb-admin` (cut from `master` at 145326a)
 and deployed to beta; see [Implementation notes](#implementation-notes) for where the build
-differs from this plan. The cutover has not started.
+differs from this plan. The cutover ran on 14 October 2026 (Melbourne time); see
+[Cutover log](#cutover-log).
 
 ## Goal
 
@@ -403,6 +404,29 @@ build, synth) on every push without deploying anything. The OIDC deploy role onl
 Afterwards, beta can stay as a staging environment or be torn down (the table and user pool are
 retained and need deleting by hand).
 
+### Cutover log
+
+14 October 2026, Melbourne time.
+
+- **Steps 2-3:** the seed is `melbourne-songs.tex@28e3f5e` (96 songs), frozen as
+  `data/seed-songbook.json`. Master's head at the time, 145326a, is tagged `latex-final`. The live
+  PDF's sha256 is `eaa94bf91886a1823b01ad6dedd3949bbec10307014fdfe91e92dde54eaf1072`, the same on
+  both prod hostnames, and it is committed as `web/public/melbourne-songs.pdf`.
+- **Step 4:** beta was redeployed and re-seeded with `--reset` from the frozen seed. These checks
+  passed:
+  - `check:published`.
+  - The PDF hash on beta, and `/melbourne-songs-v0.1.pdf` returning 200.
+  - Sign-in on the custom domain without touching `amazoncognito.com`.
+  - The API smoke test: create, update, 409 on a stale save, 400 on invalid input, history, revert,
+    delete, restore, republish, and 401 without a token.
+  - The portal end to end in WebKit.
+
+  The test user was deleted and beta re-seeded again afterwards. `cdk diff` against prod updates
+  the distribution and response-headers policy in place, leaves the bucket alone, and only adds
+  resources. The `SITE_AUTH_*` secrets were added.
+- **Steps 5-7:** the PR was merged, then the CI deploy, the sign-in CNAME, the prod editor, the
+  smoke test and the first export followed.
+
 **Later, not part of the cutover: redirect the PDF URL to the site.** At some point after the
 cutover, `/melbourne-songs.pdf` is to redirect to the songs site's home page. When that happens:
 
@@ -570,3 +594,6 @@ defaults, except that the git export (Decision 8) runs weekly.
 - **`SEED_FILE` also accepts a published `songbook.json`** (wrapped as a SeedFile at synth), so an
   export restores with one setting. This replaces the `seed:export` script the cutover section
   mentioned: `npm run export -- --stage beta` is that script.
+- **The Vite plugin is gone, but `npm run dev` still has a book:** without a `DEV_PROXY_TARGET`,
+  a small dev-only middleware in `web/vite.config.ts` serves the frozen seed as `/songbook.json`.
+  The printed PDF is served from `web/public/` like any other static file.
