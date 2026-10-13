@@ -1,24 +1,15 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
+import { rmSync } from 'node:fs';
 import { App } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { afterAll, describe, expect, it } from 'vitest';
 import { GithubDeployStack } from '../lib/github-deploy-stack.ts';
-import { parseDomainNames, SiteStack } from '../lib/site-stack.ts';
+import { parseDomainNames } from '../lib/site-stack.ts';
+import { certificateArn, env, siteStack, testRoot } from './helpers.ts';
 
-const env = { account: '123456789012', region: 'ap-southeast-2' };
-
-// A stand-in for web/dist so the tests do not depend on a prior build.
-const siteDir = mkdtempSync(path.join(tmpdir(), 'songbook-site-'));
-mkdirSync(path.join(siteDir, 'assets'));
-writeFileSync(path.join(siteDir, 'index.html'), '<!doctype html>');
-writeFileSync(path.join(siteDir, 'assets', 'index-abc123.js'), '');
-afterAll(() => rmSync(siteDir, { recursive: true, force: true }));
+afterAll(() => rmSync(testRoot, { recursive: true, force: true }));
 
 describe('SiteStack', () => {
-  const app = new App();
-  const template = Template.fromStack(new SiteStack(app, 'Site', { env, siteDir }));
+  const template = Template.fromStack(siteStack());
 
   it('keeps the bucket private and TLS-only', () => {
     template.hasResourceProperties('AWS::S3::Bucket', {
@@ -88,18 +79,30 @@ describe('SiteStack', () => {
     expect(pages[1].Properties.DistributionPaths).toEqual(['/*']);
     expect(JSON.stringify(pages[1].DependsOn ?? [])).toContain('DeployAssets');
   });
+
+  it('never lets a site deploy upload or overwrite songbook.json', () => {
+    const pages = Object.entries(template.findResources('Custom::CDKBucketDeployment')).find(([id]) => id.startsWith('DeployPages'))!;
+    expect(pages[1].Properties.Exclude).toEqual(['songbook.json']);
+  });
+
+  it('puts pages live only after the seed and the publish have run', () => {
+    const triggers = template.findResources('Custom::Trigger');
+    const id = (prefix: string) => Object.keys(triggers).find((k) => k.startsWith(prefix))!;
+    const seed = id('SongDataSeedOnDeploy');
+    const publish = id('SongDataPublishOnDeploy');
+    expect(seed).toBeDefined();
+    expect(publish).toBeDefined();
+    expect(triggers[publish].DependsOn).toEqual(expect.arrayContaining([expect.stringMatching(/^SongDataSeedOnDeploy/)]));
+    expect(triggers[publish].DependsOn).toEqual(expect.arrayContaining([expect.stringMatching(/^DeployAssets/)]));
+    const pages = Object.entries(template.findResources('Custom::CDKBucketDeployment')).find(([k]) => k.startsWith('DeployPages'))!;
+    expect(pages[1].DependsOn).toEqual(expect.arrayContaining([expect.stringMatching(/^SongDataPublishOnDeploy/)]));
+  });
 });
 
 describe('SiteStack with a custom domain', () => {
-  const certificateArn = 'arn:aws:acm:us-east-1:123456789012:certificate/00000000-0000-0000-0000-000000000000';
-
   it('serves every domain name with its certificate and TLS 1.2 minimum', () => {
     const template = Template.fromStack(
-      new SiteStack(new App(), 'Site', {
-        env,
-        siteDir,
-        domain: { names: ['songs.example.com', 'files.example.com'], certificateArn },
-      }),
+      siteStack({ domain: { names: ['songs.example.com', 'files.example.com'], certificateArn } }),
     );
     template.hasResourceProperties('AWS::CloudFront::Distribution', {
       DistributionConfig: Match.objectLike({
@@ -114,7 +117,7 @@ describe('SiteStack with a custom domain', () => {
   });
 
   it('has no alias or custom certificate without a domain', () => {
-    const template = Template.fromStack(new SiteStack(new App(), 'Site', { env, siteDir }));
+    const template = Template.fromStack(siteStack());
     const dist = Object.values(template.findResources('AWS::CloudFront::Distribution'))[0];
     expect(dist.Properties.DistributionConfig.Aliases).toBeUndefined();
     expect(dist.Properties.DistributionConfig.ViewerCertificate).toBeUndefined();
@@ -122,17 +125,12 @@ describe('SiteStack with a custom domain', () => {
 
   it('rejects a certificate outside us-east-1', () => {
     expect(
-      () =>
-        new SiteStack(new App(), 'Site', {
-          env,
-          siteDir,
-          domain: { names: ['songs.example.com'], certificateArn: certificateArn.replace('us-east-1', 'ap-southeast-2') },
-        }),
+      () => siteStack({ domain: { names: ['songs.example.com'], certificateArn: certificateArn.replace('us-east-1', 'ap-southeast-2') } }),
     ).toThrow(/us-east-1/);
   });
 
   it('rejects a domain with no names', () => {
-    expect(() => new SiteStack(new App(), 'Site', { env, siteDir, domain: { names: [], certificateArn } })).toThrow(
+    expect(() => siteStack({ domain: { names: [], certificateArn } })).toThrow(
       /at least one hostname/,
     );
   });

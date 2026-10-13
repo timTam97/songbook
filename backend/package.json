@@ -1,0 +1,32 @@
+{
+  "name": "@songbook/backend",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lambda handlers (seed, publish, admin API) and the scripts that drive them",
+  "type": "module",
+  "scripts": {
+    "seed": "tsx scripts/seed.ts",
+    "republish": "tsx scripts/republish.ts",
+    "check:published": "tsx scripts/check-published.ts",
+    "export": "tsx scripts/export.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudfront": "3.1149.0",
+    "@aws-sdk/client-dynamodb": "3.1149.0",
+    "@aws-sdk/client-lambda": "3.1149.0",
+    "@aws-sdk/client-s3": "3.1149.0",
+    "@aws-sdk/lib-dynamodb": "3.1149.0",
+    "@songbook/core": "0.0.0"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-cloudformation": "3.1149.0",
+    "@types/aws-lambda": "8.10.164",
+    "@types/node": "26.6.3",
+    "aws-sdk-client-mock": "4.1.0",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.0.2"
+  }
+}

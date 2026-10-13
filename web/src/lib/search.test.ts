@@ -1,12 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import type { SeedFile } from '@songbook/core';
 import { describe, expect, it } from 'vitest';
-import { parseSongbook } from '../../parser/parse.ts';
 import { createSearch, normalizeTerm } from './search.ts';
 import { indexSongbook, neighbours, resolveSong, songPath } from './songbook.ts';
 
-const tex = readFileSync(fileURLToPath(new URL('../../../melbourne-songs.tex', import.meta.url)), 'utf8');
-const index = indexSongbook(parseSongbook(tex));
+// The real book: the frozen seed every stage starts from.
+const seedPath = fileURLToPath(new URL('../../../data/seed-songbook.json', import.meta.url));
+const index = indexSongbook((JSON.parse(readFileSync(seedPath, 'utf8')) as SeedFile).book);
 const search = createSearch(index);
 const byTitle = (title: string) => index.songs.find((s) => s.title === title)!;
 

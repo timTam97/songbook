@@ -1,13 +1,14 @@
 import { useEffect } from 'react';
 import { Link, Navigate, useParams } from 'react-router';
-import { index } from '../lib/data.ts';
+import { useSongData } from '../lib/data.ts';
 import { songPath } from '../lib/songbook.ts';
 
 export function NotFound({ number }: { number?: string }) {
+  const { index } = useSongData();
   const isNumber = number !== undefined && /^\d+$/.test(number);
   useEffect(() => {
     document.title = `Not found · ${index.book.title}`;
-  }, []);
+  }, [index]);
   return (
     <div className="py-12 text-center">
       <h1 className="font-serif text-2xl font-semibold">{isNumber ? `There is no hymn ${number}` : 'Page not found'}</h1>
@@ -24,6 +25,7 @@ export function NotFound({ number }: { number?: string }) {
 /** /42 → /songs/42/<slug> */
 export function NumberRedirect() {
   const { number } = useParams();
+  const { index } = useSongData();
   const song = number && /^\d+$/.test(number) ? index.byNumber.get(Number(number)) : undefined;
   if (song) return <Navigate to={songPath(song)} replace />;
   return <NotFound number={number} />;

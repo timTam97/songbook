@@ -6,6 +6,12 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import type { Construct } from 'constructs';
+import { Admin, authOrigin } from './admin.ts';
+import { SONGBOOK_KEY, SongData } from './song-data.ts';
+import type { AuthDomain, Stage } from './stage.ts';
+
+/** Where the admin portal reads its sign-in settings, written at deploy time. */
+export const PORTAL_CONFIG_KEY = 'admin-config.json';
 
 export interface SiteDomain {
   /** Hostnames the site is served on. */
@@ -24,15 +30,21 @@ export function parseDomainNames(value: string | undefined): string[] {
 }
 
 export interface SiteStackProps extends StackProps {
+  /** prod or beta. Both are built from this class, so beta runs exactly what prod will. */
+  stage: Stage;
   /** Directory holding the built web app (web/dist). */
   siteDir: string;
   /** Custom domain. Omit to serve only on the *.cloudfront.net address. */
   domain?: SiteDomain;
+  /** SeedFile JSON imported into the stage's table on its first deploy. */
+  seedFile: string;
+  /** Where the admin sign-in is hosted (see stageAuthDomain). */
+  authDomain: AuthDomain;
 }
 
 /**
- * Serves index.html for app routes (/songs/42/..., /42) while real files
- * (/assets/x.js, /melbourne-songs.pdf) pass through untouched.
+ * Serves index.html for app routes (/songs/42/..., /42, /admin/...) while real
+ * files (/assets/x.js, /songbook.json, /melbourne-songs.pdf) pass through untouched.
  */
 const SPA_ROUTING = `
 function handler(event) {
@@ -42,11 +54,23 @@ function handler(event) {
   return request;
 }`;
 
+/**
+ * One stage of the site: S3 + CloudFront for the app, plus the songbook's
+ * table and publisher (SongData).
+ *
+ * Production's bucket, distribution, headers policy and routing function keep
+ * the construct IDs they had before beta existed (an infra test checks the
+ * logical IDs), so the cutover updates the live distribution in place rather
+ * than replacing it.
+ */
 export class SiteStack extends Stack {
   readonly distribution: cloudfront.Distribution;
+  readonly data: SongData;
+  readonly admin: Admin;
 
   constructor(scope: Construct, id: string, props: SiteStackProps) {
     super(scope, id, props);
+    const { stage } = props;
 
     // Everything in the bucket is rebuilt from the repo on each deploy, so it is safe to delete with the stack.
     const bucket = new s3.Bucket(this, 'SiteBucket', {
@@ -64,6 +88,8 @@ export class SiteStack extends Stack {
           contentSecurityPolicy: [
             "default-src 'self'",
             "script-src 'self'",
+            // The admin portal exchanges its sign-in code for tokens with Cognito.
+            `connect-src 'self' ${authOrigin(props.authDomain, this.region)}`,
             // React sets the lyric size through a style attribute.
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data:",
@@ -79,6 +105,10 @@ export class SiteStack extends Stack {
         frameOptions: { frameOption: cloudfront.HeadersFrameOption.DENY, override: true },
         referrerPolicy: { referrerPolicy: cloudfront.HeadersReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN, override: true },
       },
+      // Beta duplicates the live site; keep it out of search engines.
+      ...(stage === 'beta'
+        ? { customHeadersBehavior: { customHeaders: [{ header: 'X-Robots-Tag', value: 'noindex, nofollow', override: true }] } }
+        : {}),
     });
 
     const routing = new cloudfront.Function(this, 'SpaRouting', {
@@ -96,7 +126,7 @@ export class SiteStack extends Stack {
     }
 
     this.distribution = new cloudfront.Distribution(this, 'Distribution', {
-      comment: 'Melbourne Songs',
+      comment: stage === 'prod' ? 'Melbourne Songs' : `Melbourne Songs (${stage})`,
       defaultRootObject: 'index.html',
       httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
       // The audience is in Australia, which only PRICE_CLASS_ALL covers.
@@ -120,6 +150,17 @@ export class SiteStack extends Stack {
       },
     });
 
+    this.data = new SongData(this, 'SongData', { stage, bucket, distribution: this.distribution, seedFile: props.seedFile });
+    this.admin = new Admin(this, 'Admin', {
+      stage,
+      distribution: this.distribution,
+      hostnames: domain?.names ?? [],
+      table: this.data.table,
+      publisher: this.data.publisher,
+      authDomain: props.authDomain,
+      responseHeadersPolicy: headers,
+    });
+
     // Hashed build assets never change: cache for a year. Old ones are kept
     // (prune: false) so a browser holding the previous index.html still works.
     const assets = new s3deploy.BucketDeployment(this, 'DeployAssets', {
@@ -130,20 +171,40 @@ export class SiteStack extends Stack {
       cacheControl: [s3deploy.CacheControl.fromString('public, max-age=31536000, immutable')],
     });
 
-    // Everything else (index.html, the PDF, ...) must pick up new songs immediately.
+    // Everything else (index.html, the PDF, the portal's settings, ...) must pick up changes immediately.
+    // songbook.json belongs to the publisher: a site deploy never uploads or touches it.
     const pages = new s3deploy.BucketDeployment(this, 'DeployPages', {
-      sources: [s3deploy.Source.asset(props.siteDir, { exclude: ['assets'] })],
+      sources: [
+        s3deploy.Source.asset(props.siteDir, { exclude: ['assets', SONGBOOK_KEY] }),
+        s3deploy.Source.jsonData(PORTAL_CONFIG_KEY, this.admin.portalConfig),
+      ],
       destinationBucket: bucket,
+      exclude: [SONGBOOK_KEY],
       prune: false,
       cacheControl: [s3deploy.CacheControl.fromString('public, max-age=0, must-revalidate')],
       distribution: this.distribution,
       distributionPaths: ['/*'],
     });
-    // New index.html must never reference assets that are not uploaded yet.
-    pages.node.addDependency(assets);
+    // Deploy order: assets, then seed + publish, then pages. A new index.html never
+    // references assets that are not uploaded yet, or a songbook.json that does not exist.
+    this.data.published.executeAfter(assets);
+    pages.node.addDependency(assets, this.data.published);
 
     new CfnOutput(this, 'SiteUrl', { value: `https://${this.distribution.distributionDomainName}` });
     new CfnOutput(this, 'DistributionId', { value: this.distribution.distributionId });
     new CfnOutput(this, 'BucketName', { value: bucket.bucketName });
+    new CfnOutput(this, 'Stage', { value: stage });
+    new CfnOutput(this, 'TableName', { value: this.data.table.tableName });
+    new CfnOutput(this, 'SeedFunctionName', { value: this.data.seeder.functionName });
+    new CfnOutput(this, 'PublishFunctionName', { value: this.data.publisher.functionName });
+    new CfnOutput(this, 'UserPoolId', { value: this.admin.userPool.userPoolId });
+    if (this.admin.authDomainTarget) {
+      new CfnOutput(this, 'AuthDomainTarget', {
+        value: this.admin.authDomainTarget,
+        description: 'CNAME the sign-in hostname to this (DNS only, not proxied)',
+      });
+    }
+    new CfnOutput(this, 'AdminApiId', { value: this.admin.api.apiId });
+    new CfnOutput(this, 'AdminFunctionName', { value: this.admin.handler.functionName });
   }
 }

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 import { SongLyrics } from '../components/SongLyrics.tsx';
-import { index } from '../lib/data.ts';
+import { useSongData } from '../lib/data.ts';
 import { useLyricScale } from '../lib/prefs.ts';
 import { displayCopyright, neighbours, resolveSong, songPath, type Song } from '../lib/songbook.ts';
 import { NotFound } from './NotFound.tsx';
@@ -29,6 +29,7 @@ function NeighbourLink({ song, dir }: { song?: Song; dir: 'prev' | 'next' }) {
 
 export function SongPage() {
   const { number, slug } = useParams();
+  const { index } = useSongData();
   const song = resolveSong(index, number, slug);
   const location = useLocation();
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ export function SongPage() {
 
   useEffect(() => {
     if (song) document.title = `${song.number}. ${song.title} · ${index.book.title}`;
-  }, [song]);
+  }, [song, index]);
 
   // ← / → flip between hymns.
   useEffect(() => {

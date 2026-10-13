@@ -1,5 +1,5 @@
 import { Link, Outlet, ScrollRestoration } from 'react-router';
-import { index } from '../lib/data.ts';
+import { useSongData } from '../lib/data.ts';
 import { useTheme } from '../lib/prefs.ts';
 import { NumberJump } from './NumberJump.tsx';
 
@@ -27,7 +27,17 @@ function ThemeToggle() {
   );
 }
 
+const BETA = import.meta.env.VITE_STAGE === 'beta';
+
+/** "10 October 2026" in Melbourne time, from the book's ISO updatedAt. */
+export function formatUpdated(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Australia/Melbourne' });
+}
+
 export function Layout() {
+  const { index } = useSongData();
+  const { book } = index;
+  const dated = book.updatedAt ? ` · updated ${formatUpdated(book.updatedAt)}` : book.released ? ` · released ${book.released}` : '';
   return (
     <>
       <a
@@ -38,9 +48,18 @@ export function Layout() {
       </a>
       <header className="sticky top-0 z-20 border-b border-stone-200 bg-stone-50/90 backdrop-blur supports-[backdrop-filter]:bg-stone-50/75 dark:border-stone-800 dark:bg-stone-900/90 dark:supports-[backdrop-filter]:bg-stone-900/75">
         <div className="mx-auto flex max-w-3xl items-center gap-2 px-4 py-2">
-          <Link to="/" className="mr-auto font-serif text-lg font-semibold tracking-tight">
-            {index.book.title}
+          <Link to="/" className="font-serif text-lg font-semibold tracking-tight">
+            {book.title}
           </Link>
+          {BETA && (
+            <span
+              title="A test copy of the site. Changes here don't appear on the live site."
+              className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold tracking-wide text-amber-900 uppercase dark:bg-amber-900/60 dark:text-amber-100"
+            >
+              Beta
+            </span>
+          )}
+          <span className="mr-auto" />
           <NumberJump />
           <ThemeToggle />
         </div>
@@ -49,10 +68,15 @@ export function Layout() {
         <Outlet />
       </main>
       <footer className="no-print mx-auto max-w-3xl px-4 pb-10 text-sm text-stone-500 dark:text-stone-400">
-        {index.songs.length} songs{index.book.released ? ` · released ${index.book.released}` : ''} ·{' '}
-        <a href="/melbourne-songs.pdf" className="underline decoration-stone-300 underline-offset-2 hover:text-stone-900 dark:decoration-stone-600 dark:hover:text-stone-100">
-          Download PDF
-        </a>
+        {index.songs.length} songs{dated} ·{' '}
+        <a
+          href="/melbourne-songs.pdf"
+          title="The PDF as it was last printed. Songs added or changed since then aren't in it, and its numbers may differ."
+          className="underline decoration-stone-300 underline-offset-2 hover:text-stone-900 dark:decoration-stone-600 dark:hover:text-stone-100"
+        >
+          Printed edition (11 April 2026)
+        </a>{' '}
+        (PDF, without later changes)
       </footer>
       <ScrollRestoration />
     </>

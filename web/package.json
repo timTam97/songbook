@@ -4,14 +4,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "parse": "tsx scripts/parse.ts",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@songbook/core": "0.0.0",
     "minisearch": "7.2.0",
+    "oidc-client-ts": "3.5.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-router": "8.4.0"

@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { index, search } from '../lib/data.ts';
+import { useSongData } from '../lib/data.ts';
 import type { Snippet } from '../lib/search.ts';
 import { songPath, type Song } from '../lib/songbook.ts';
-
-const TITLE = index.book.title;
 
 function Highlight({ snippet }: { snippet: Snippet }) {
   const parts: ReactNode[] = [];
@@ -36,6 +34,7 @@ function SongRow({ song, children }: { song: Song; children?: ReactNode }) {
 }
 
 function NumberIndex() {
+  const { index } = useSongData();
   return (
     <ol>
       {index.songs.map((s) => (
@@ -48,15 +47,17 @@ function NumberIndex() {
 }
 
 export function IndexPage() {
+  const { index, search } = useSongData();
+  const TITLE = index.book.title;
   const [params, setParams] = useSearchParams();
   const query = params.get('q') ?? '';
-  const hits = useMemo(() => search(query), [query]);
+  const hits = useMemo(() => search(query), [search, query]);
   const field = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     document.title = query ? `“${query}” · ${TITLE}` : TITLE;
-  }, [query]);
+  }, [query, TITLE]);
 
   // "/" focuses search, as on most sites.
   useEffect(() => {

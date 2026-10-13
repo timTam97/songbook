@@ -2,7 +2,9 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { App, Tags } from 'aws-cdk-lib';
 import { GithubDeployStack } from '../lib/github-deploy-stack.ts';
-import { parseDomainNames, SiteStack, type SiteDomain } from '../lib/site-stack.ts';
+import { resolveSeedFile } from '../lib/seed-file.ts';
+import { SiteStack } from '../lib/site-stack.ts';
+import { resolveStage, STACK_NAMES, stageAuthDomain, stageDomain } from '../lib/stage.ts';
 
 // Local, gitignored settings (see README). CI passes the same variables from repository secrets.
 const envFile = fileURLToPath(new URL('../.env.local', import.meta.url));
@@ -19,33 +21,25 @@ const env = {
   region: process.env.CDK_DEFAULT_REGION ?? 'ap-southeast-2',
 };
 
-/**
- * The custom domain lives outside the repo on purpose. Deploying without it
- * would detach the domain from the live site, so that has to be asked for
- * explicitly with SITE_NO_DOMAIN=true (CI does this for synth-only checks).
- */
-function siteDomain(): SiteDomain | undefined {
-  // Comma-separated, e.g. "songs.example.com,files.example.com".
-  const names = parseDomainNames(process.env.SITE_DOMAIN_NAME);
-  const certificateArn = process.env.SITE_CERTIFICATE_ARN?.trim();
-  if (names.length && certificateArn) return { names, certificateArn };
-  if (process.env.SITE_NO_DOMAIN === 'true') return undefined;
-  throw new Error(
-    'Set SITE_DOMAIN_NAME and SITE_CERTIFICATE_ARN (infra/.env.local or CI secrets), ' +
-      'or SITE_NO_DOMAIN=true to deploy without a custom domain.',
-  );
-}
+// prod only in CI on master; beta everywhere else (see lib/stage.ts).
+const stage = resolveStage(process.env);
 
 const repo: string = app.node.tryGetContext('githubRepo');
 const branch: string = app.node.tryGetContext('githubBranch');
 // Accounts hold a single GitHub OIDC provider; reuse it unless told to create one.
 const createProvider = String(app.node.tryGetContext('createGithubOidcProvider')) === 'true';
 
-new SiteStack(app, 'MelbourneSongsSite', {
+new SiteStack(app, STACK_NAMES[stage], {
   env,
+  stage,
   siteDir,
-  domain: siteDomain(),
-  description: 'Melbourne Songs web app (S3 + CloudFront)',
+  domain: stageDomain(stage, process.env),
+  // The seed for the stage's empty table: SEED_FILE (e.g. an export), otherwise
+  // the frozen seed in data/.
+  seedFile: resolveSeedFile(process.env.SEED_FILE),
+  authDomain: stageAuthDomain(stage, process.env),
+  description: stage === 'prod' ? 'Melbourne Songs web app (S3 + CloudFront)' : `Melbourne Songs web app, ${stage} stage (S3 + CloudFront + DynamoDB)`,
+  tags: { stage },
 });
 
 new GithubDeployStack(app, 'MelbourneSongsGithubDeploy', {
