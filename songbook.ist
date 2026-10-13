@@ -1,6 +1,0 @@
-level		'+'
-preamble	""
-postamble	""
-item_0		"\n  \\sbindexitem{"
-delim_0		"}{"
-delim_t		"}"

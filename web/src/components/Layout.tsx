@@ -69,9 +69,14 @@ export function Layout() {
       </main>
       <footer className="no-print mx-auto max-w-3xl px-4 pb-10 text-sm text-stone-500 dark:text-stone-400">
         {index.songs.length} songs{dated} ·{' '}
-        <a href="/melbourne-songs.pdf" className="underline decoration-stone-300 underline-offset-2 hover:text-stone-900 dark:decoration-stone-600 dark:hover:text-stone-100">
-          Download PDF
-        </a>
+        <a
+          href="/melbourne-songs.pdf"
+          title="The PDF as it was last printed. Songs added or changed since then aren't in it, and its numbers may differ."
+          className="underline decoration-stone-300 underline-offset-2 hover:text-stone-900 dark:decoration-stone-600 dark:hover:text-stone-100"
+        >
+          Printed edition (11 April 2026)
+        </a>{' '}
+        (PDF, without later changes)
       </footer>
       <ScrollRestoration />
     </>

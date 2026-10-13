@@ -1,6 +1,6 @@
 /**
- * The songbook's data model. The web app, the admin portal, the Lambdas and
- * (until LaTeX is retired) the .tex parser all share it.
+ * The songbook's data model. The web app, the admin portal and the Lambdas
+ * all share it.
  */
 
 /** A run of lyric text with uniform formatting. A chord, if present, sits above the first character. */

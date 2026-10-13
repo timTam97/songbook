@@ -1,8 +1,7 @@
 /**
  * Write a stage's public songbook.json to a directory, checked and
  * pretty-printed. The weekly export commits this file to the `content` branch;
- * it is also a seed for SEED_FILE (to promote beta's songs at the cutover, or
- * to re-seed an empty table from a backup).
+ * it is also a seed for SEED_FILE (to re-seed an empty table from a backup).
  *
  *   npm run export -- --stage beta --out .tmp/export          # site URL from the stack outputs
  *   npm run export -- --url https://songs.example.com --out x  # any site; needs no AWS access

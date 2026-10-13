@@ -1,6 +1,8 @@
 /** Shared plumbing for the scripts that drive a deployed stage from this machine. */
+import { readFileSync } from 'node:fs';
 import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
+import type { SeedFile } from '@songbook/core';
 
 export type Stage = 'prod' | 'beta';
 
@@ -31,6 +33,11 @@ export function parseArgs(argv: string[], usage: string): Args {
 export function fail(message: string): never {
   console.error(message);
   process.exit(1);
+}
+
+/** The book every stage starts from: melbourne-songs.tex as parsed when LaTeX was retired. */
+export function frozenSeed(): SeedFile {
+  return JSON.parse(readFileSync(new URL('../../data/seed-songbook.json', import.meta.url), 'utf8')) as SeedFile;
 }
 
 export async function stackOutputs(stage: Stage): Promise<Record<string, string>> {

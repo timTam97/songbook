@@ -4,7 +4,11 @@
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { SeedFile, Songbook } from '@songbook/core';
+
+/** The book every stage starts from: melbourne-songs.tex as parsed when LaTeX was retired. */
+export const FROZEN_SEED = fileURLToPath(new URL('../../data/seed-songbook.json', import.meta.url));
 
 function tempSeed(seed: SeedFile): string {
   const file = path.join(mkdtempSync(path.join(tmpdir(), 'songbook-seed-')), 'seed-songbook.json');
@@ -13,15 +17,13 @@ function tempSeed(seed: SeedFile): string {
 }
 
 /**
- * SEED_FILE if given, otherwise the book `fallback` returns (the parsed .tex).
- * SEED_FILE is a SeedFile, or a published songbook.json (`npm run export`,
- * or the `content` branch), which is wrapped as one. The seed Lambda checks
- * the book before importing anything. Generated files live in the OS temp dir
- * and the cloud assembly, never in git.
+ * SEED_FILE if given, otherwise the frozen seed. SEED_FILE is a SeedFile, or
+ * a published songbook.json (`npm run export`, or the `content` branch),
+ * which is wrapped as one in the OS temp dir. The seed Lambda checks the book
+ * before importing anything.
  */
-export function resolveSeedFile(seedFile: string | undefined, fallback: () => SeedFile): string {
-  if (!seedFile) return tempSeed(fallback());
-  const file = path.resolve(seedFile);
+export function resolveSeedFile(seedFile: string | undefined): string {
+  const file = path.resolve(seedFile || FROZEN_SEED);
   const parsed = JSON.parse(readFileSync(file, 'utf8')) as Partial<SeedFile> & Partial<Songbook>;
   if (parsed.book) return file;
   if (!Array.isArray(parsed.songs)) throw new Error(`SEED_FILE ${seedFile} is neither a SeedFile nor a songbook.json`);

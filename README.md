@@ -1,86 +1,36 @@
 # Melbourne Songs
 
-A LaTeX songbook for Melbourne church gatherings.
+A songbook for Melbourne church gatherings, as a searchable web app. Editors
+add and change songs in the [admin portal](#song-data-and-the-admin-portal);
+the site republishes within seconds.
 
-## Build
-
-CI compiles the PDF on every push and pull request (see [Deploy](#deploy)).
-To build it locally:
-
-```bash
-pdflatex melbourne-songs.tex
-./mksbtdx melbourne-songs    # Title/first-line index
-pdflatex melbourne-songs.tex
-pdflatex melbourne-songs.tex # hyperref needs one more pass for its links
-```
-
-## Generate Indexes
-
-```bash
-./mksbtdx melbourne-songs    # Title/first-line index
-./mksbkdx melbourne-songs    # Key index
-./mksbadx melbourne-songs    # Artist index
-```
-
-Then recompile to include the indexes.
-
-## Adding Songs
-
-On this branch the web app's songs come from DynamoDB and are edited in the
-[admin portal](#song-data-and-the-admin-portal). Edits to the `.tex` change
-the PDF, and reach beta only when it is re-seeded
-(`npm run seed -- --stage beta --reset --yes`).
-
-Add songs before `\end{document}` in `melbourne-songs.tex` using:
-
-```latex
-\begin{song}{Title}{}
-  {\SBPubDom}
-  {Author}
-  {}
-  {}
-
-  \begin{SBVerse}
-    Lyrics here...
-  \end{SBVerse}
-
-  \begin{SBOpGroup}
-    Chorus/refrain here...
-  \end{SBOpGroup}
-\end{song}
-```
+The book began as a LaTeX songbook. Its last LaTeX source is tagged
+`latex-final`, and its last printed edition is still served at
+`/melbourne-songs.pdf` (see [Web app](#web-app)).
 
 ## Structure
 
 ```
-melbourne-songs.tex    # Songbook source: the PDF, and the seed for each stage's song table until the cutover
-melbourne-songs.pdf    # Compiled output (the site serves CI's own build instead)
-songbook.sty           # LaTeX style (required)
 core/                  # Song model, editor markup, validation and book order (shared TypeScript)
 backend/               # Lambdas (seed, publish, admin API) and scripts that drive a deployed stage
 web/                   # Public web app and the admin portal (/admin)
+web/public/            # Files served as-is at the site root, including the printed editions (PDFs)
 infra/                 # AWS CDK app: S3 + CloudFront, DynamoDB, Lambdas, Cognito, HTTP API
+data/                  # seed-songbook.json: the book an empty table is seeded from
 docs/plans/            # Design of the DynamoDB migration and admin portal
-.github/workflows/     # CI: rebuilds the PDF and web app and redeploys on every push to master
-samples/               # Original Songbook 4.3 examples
-contrib/               # Utilities (chord diagrams, transposition)
+.github/workflows/     # CI: tests and redeploys on every push to master; weekly export to git
 ```
-
-Built using the [Songbook 4.3](http://www.rath.ca/Misc/Songbook/) LaTeX package.
 
 ## Web app
 
-The web app lets people search, browse and read the songs. On this branch
-it loads them from `/songbook.json`, which a Lambda publishes from DynamoDB
-whenever an editor saves a song in the admin portal (see
-[Song data and the admin portal](#song-data-and-the-admin-portal)). Until the
-cutover, each stage's table is seeded once from `melbourne-songs.tex`.
+The web app lets people search, browse and read the songs. It loads them from
+`/songbook.json`, which a Lambda publishes from DynamoDB whenever an editor
+saves a song in the admin portal (see
+[Song data and the admin portal](#song-data-and-the-admin-portal)).
 
 - **Hymn numbers are alphabetical positions.** A song's number is its place
   in the book's alphabetical order (titles lowercased, compared by code
-  point, as `sort_songs.py` sorts the `.tex`). That reproduces every number
-  in the current PDF, but adding, deleting or renaming a song renumbers the
-  songs after it.
+  point). Adding, deleting or renaming a song renumbers the songs after it.
 - **Get to a hymn by number:** type the number in the `#` box, or just type it
   anywhere on the site. The hymn opens as soon as the number is unambiguous
   ("25" at once; "2" after a one-second pause in case "25" is coming). You
@@ -89,20 +39,11 @@ cutover, each stage's table is seeded once from `melbourne-songs.tex`.
   renumbered, the slug still finds the right hymn.
 - **Search** covers titles, first lines, lyrics and authors. It matches as you
   type and tolerates typos.
-- The **PDF** download is compiled from `melbourne-songs.tex` by CI on every
-  deploy, so it always matches the site. The committed `melbourne-songs.pdf`
-  is not what the site serves and may lag behind. The title page's
-  "Last Revised" date is the date of the last commit that changed the `.tex`.
-  `web/public/` holds files published as-is at the site root, such as the
-  archived `melbourne-songs-v0.1.pdf`, which keeps its old URL.
-
-The parser understands the environments and commands this songbook uses
-(`SBVerse`, `SBOpGroup`, `SBChorus`, `SBSection`, `\textit`, `\Ch`, `\SBRef`,
-TeX quotes and dashes, accents, `\WBColBrk`, ...). Anything else **fails the
-build with a line number**, e.g.
-`melbourne-songs.tex:1234: unsupported command \foo`, rather than publishing
-garbled lyrics. To support a new construct, add it to `web/parser/latex.ts`
-(lyrics) or `web/parser/parse.ts` (between verses).
+- **The printed edition** (`web/public/melbourne-songs.pdf`, last revised
+  11 April 2026) is the PDF the LaTeX build last published, kept byte for
+  byte at its old URL. It doesn't follow later edits, and its numbers stop
+  matching the site once a change reorders the book. `web/public/` also holds
+  the archived `melbourne-songs-v0.1.pdf`, which keeps its old URL too.
 
 ### Develop
 
@@ -110,8 +51,7 @@ Requires Node.js 22+.
 
 ```bash
 npm install
-npm run dev        # http://127.0.0.1:5173; /songbook.json is the .tex, re-read on every load
-npm run parse      # check the .tex parses; `npm run parse -- out.json` dumps the data
+npm run dev        # http://127.0.0.1:5173; /songbook.json is the frozen seed (or DEV_PROXY_TARGET's book)
 npm test           # core, backend (Lambdas), web and CDK tests
 npm run typecheck
 npm run build      # production build in web/dist
@@ -124,13 +64,10 @@ drive a deployed stage), `web/` (the public site and the admin portal) and
 
 ### Deploy
 
-Pushes to `master` that touch the songbook, `core/`, `backend/`, `web/` or
-`infra/` run `.github/workflows/web.yml`. It parses, tests, compiles the PDF
-(TeX Live from Ubuntu's packages) and builds, then deploys the **prod** stage
-with `cdk deploy`, using a GitHub OIDC role (no stored AWS keys). Pull
-requests run the same checks without deploying; each run attaches the
-compiled PDF as the `melbourne-songs-pdf` artifact, so a PR's PDF can be
-checked before merging.
+Pushes to `master` that touch `data/`, `core/`, `backend/`, `web/` or
+`infra/` run `.github/workflows/web.yml`. It typechecks, tests and builds,
+then deploys the **prod** stage with `cdk deploy`, using a GitHub OIDC role
+(no stored AWS keys). Pull requests run the same checks without deploying.
 
 The CDK app builds the prod stage (`MelbourneSongsSite`) **only in CI on
 master**. Everywhere else, a laptop included, it builds the beta stage
@@ -203,23 +140,24 @@ The design and its decisions are in
   `index.html` goes live. It refuses to publish an empty or invalid book. A
   site deploy never touches `songbook.json`.
 - **The seed** fills an empty table on a stage's first deploy, from
-  `melbourne-songs.tex` parsed at synth time (or `SEED_FILE`: a SeedFile
-  JSON, or a `songbook.json` from the export below). It checks every song
-  first, and is a no-op once the table holds a book.
+  `data/seed-songbook.json` (the `.tex` as parsed when LaTeX was retired),
+  or from `SEED_FILE`: a SeedFile JSON, or a `songbook.json` from the
+  export below. It checks every song first, and is a no-op once the table
+  holds a book.
 - **The weekly export** commits prod's `songbook.json` to the `content`
   branch: see [Export to git](#export-to-git).
 
 ### Beta
 
-Beta is the sandbox for this branch, marked with a Beta badge and kept out of
+Beta is a staging sandbox, marked with a Beta badge and kept out of
 search engines (`X-Robots-Tag: noindex`). Its settings go in
 `infra/.env.local` (see [Custom domain](#custom-domain); without them set
 `SITE_NO_DOMAIN=true` to serve on its `*.cloudfront.net` address only).
 
 ```bash
 npm run deploy:beta                                # build with the Beta badge, then cdk deploy MelbourneSongsBeta
-npm run check:published -- --stage beta            # is beta's songbook.json exactly the parsed .tex?
-npm run seed -- --stage beta --reset --yes         # discard beta's edits and re-import the .tex
+npm run seed -- --stage beta --reset --yes         # discard beta's edits and re-import the frozen seed
+npm run check:published -- --stage beta            # is beta's songbook.json exactly the frozen seed?
 npm run republish -- --stage beta                  # rebuild songbook.json now
 ```
 
@@ -229,7 +167,7 @@ deploy.
 | Optional setting | Meaning |
 | --- | --- |
 | `BETA_AUTH_DOMAIN_PREFIX`, `SITE_AUTH_DOMAIN_PREFIX` | Cognito sign-in domain prefix (default `melbourne-songs-<stage>`); must be unique in the region. Not used with a [sign-in hostname](#sign-in-domain) |
-| `SEED_FILE` | Seed the stage from this file instead of the `.tex`: a SeedFile JSON, or a `songbook.json` written by `npm run export` |
+| `SEED_FILE` | Seed the stage from this file instead of `data/seed-songbook.json`: a SeedFile JSON, or a `songbook.json` written by `npm run export` |
 | `DEV_PROXY_TARGET` (in `web/.env.local`) | Point `npm run dev` at a deployed stage, e.g. `https://beta.songs.example.com`: the dev server proxies `/songbook.json`, `/admin-config.json` and `/api` to it |
 
 ### Editors
@@ -270,6 +208,7 @@ own hostname:
    CloudFront distribution of its own, which can take up to an hour to come
    up; the old prefix domain keeps working until the deploy swaps it out.
 3. CNAME the hostname (DNS only, not proxied) to the stack's `AuthDomainTarget`
+   output. Sign-in on that stage works once it resolves.
 
 The sign-in pages are styled to match the site (stone colours, light or dark
 following the browser, the site's icon and title) by
@@ -278,7 +217,6 @@ layout but not the wording. The logo spells out the title, so update it there
 if the book is renamed. To try a change without a deploy, push it straight
 to beta with `aws cognito-idp update-managed-login-branding`; the next deploy
 replaces whatever is live with what the code says.
-   output. Sign-in on that stage works once it resolves.
 
 ### The admin portal
 
@@ -315,8 +253,7 @@ to the `content` branch, if it has changed since the last export. That
 branch holds only the book and a README, so `git log -p content` is the
 book's edit history, and the file is a backup outside AWS. The workflow reads
 the site's address from the `SITE_DOMAIN_NAME` secret and needs nothing else.
-Run it by hand from the Actions tab to export now. Like every scheduled
-workflow it only runs from master, so it starts at the cutover.
+Run it by hand from the Actions tab to export now.
 
 The export refuses an error page, a truncated file or a book the seed would
 reject, so every commit on `content` can re-seed a table:
