@@ -112,7 +112,7 @@ export function NumberJump() {
           aria-invalid={invalid}
           aria-describedby={invalid ? 'hymn-number-error' : undefined}
           title={`Type a hymn number (${index.first}–${index.last})`}
-          className="h-9 w-[5.5rem] rounded-md border border-stone-300 bg-white pr-2 pl-6 tabular-nums placeholder:text-stone-400 aria-invalid:border-red-500 dark:border-stone-700 dark:bg-stone-950"
+          className="h-11 w-[5.5rem] rounded-md border border-stone-300 bg-white pr-2 pl-6 tabular-nums placeholder:text-stone-400 aria-invalid:border-red-500 dark:border-stone-700 dark:bg-stone-950"
         />
       </div>
       <button type="submit" className="sr-only">

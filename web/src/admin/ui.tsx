@@ -9,11 +9,13 @@ export const button = {
     'inline-flex h-9 items-center justify-center rounded-md border border-stone-300 bg-white px-3 text-sm font-medium text-stone-800 hover:bg-stone-100 disabled:opacity-40 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800',
   danger:
     'inline-flex h-9 items-center justify-center rounded-md border border-red-300 bg-white px-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-40 dark:border-red-800 dark:bg-stone-900 dark:text-red-300 dark:hover:bg-red-950',
-  link: 'text-sm font-medium text-stone-700 underline decoration-stone-300 underline-offset-2 hover:text-stone-950 dark:text-stone-300 dark:decoration-stone-600 dark:hover:text-stone-50',
+  // A min-height rather than padding, so a link's tap area reaches 44px without shifting the text.
+  link: 'inline-flex min-h-11 items-center text-sm font-medium text-stone-700 underline decoration-stone-300 underline-offset-2 hover:text-stone-950 dark:text-stone-300 dark:decoration-stone-600 dark:hover:text-stone-50',
 };
 
+/** 16px on phones, where iOS Safari zooms into any smaller field on focus; 14px from 640px. */
 export const input =
-  'h-9 w-full rounded-md border border-stone-300 bg-white px-3 text-sm placeholder:text-stone-400 aria-invalid:border-red-500 dark:border-stone-700 dark:bg-stone-950';
+  'h-9 w-full rounded-md border border-stone-300 bg-white px-3 text-base placeholder:text-stone-400 aria-invalid:border-red-500 sm:text-sm dark:border-stone-700 dark:bg-stone-950';
 
 /** "3 minutes ago", "yesterday", or a date, for edit times. */
 export function ago(iso: string | undefined, now = Date.now()): string {

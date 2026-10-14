@@ -76,8 +76,8 @@ function Shell({ user }: { user: User }) {
   return (
     <>
       <header className="sticky top-0 z-20 border-b border-stone-200 bg-stone-50/95 dark:border-stone-800 dark:bg-stone-900/95">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2">
-          <Link to="/admin" className="font-serif text-lg font-semibold tracking-tight">
+        <div className="px-safe mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-1 py-1">
+          <Link to="/admin" className="inline-flex min-h-11 items-center font-serif text-lg font-semibold tracking-tight">
             Songbook admin
           </Link>
           {BETA && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 uppercase dark:bg-amber-900/60 dark:text-amber-100">Beta</span>}
@@ -105,7 +105,7 @@ function Shell({ user }: { user: User }) {
           </div>
         </div>
       </header>
-      <main id="main" className="mx-auto max-w-6xl px-4 pt-5 pb-20">
+      <main id="main" className="px-safe mx-auto max-w-6xl pt-5 pb-20">
         <Routes>
           <Route index element={<SongList />} />
           <Route path="songs/new" element={<Editor />} />

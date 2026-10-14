@@ -24,7 +24,16 @@
   }
 }
 
-/* Lyric size is user-adjustable; every lyric measurement derives from it. */
+/*
+ * px-4, but never under a notch or rounded corner: index.html sets viewport-fit=cover,
+ * so in landscape on a notched iPhone the page runs under the notch unless padded.
+ */
+@utility px-safe {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+/* Lyric size is user-adjustable; the lyrics' measurements derive from it (see SongLyrics). */
 .lyrics {
   font-size: calc(1.125rem * var(--lyric-scale, 1));
   line-height: 1.55;

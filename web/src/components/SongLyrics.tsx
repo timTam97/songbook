@@ -24,8 +24,9 @@ function ChordedLine({ line }: { line: Line }) {
 function LyricLine({ line }: { line: Line }) {
   const chorded = line.some((seg) => seg.chord !== undefined);
   // Hanging indent: a wrapped line's continuation is indented, so it reads as one line on a phone.
+  // Capped so that at large text sizes the indent doesn't eat the width the words need.
   return (
-    <p className="pl-[1.25em] -indent-[1.25em]">
+    <p className="pl-[min(1.25em,1.5rem)] -indent-[min(1.25em,1.5rem)]">
       {chorded ? <ChordedLine line={line} /> : line.map((seg, k) => <Seg key={k} seg={seg} />)}
     </p>
   );
@@ -44,9 +45,14 @@ export function SongLyrics({ sections }: { sections: Section[] }) {
               : undefined;
         const marker =
           section.kind === 'chorus' || !section.label ? '' : section.kind === 'section' ? `${section.label})` : `${section.label}.`;
+        // The number gutter grows with the text, but only so far: at 200% an em-sized gutter
+        // left a phone two or three words per line.
         return (
-          <section key={k} aria-label={name} className="grid grid-cols-[2.25em_1fr]">
-            <span aria-hidden="true" className="pt-[0.2em] font-sans text-[0.8em] font-semibold text-stone-400 tabular-nums dark:text-stone-500">
+          <section key={k} aria-label={name} className="grid grid-cols-[clamp(2rem,2.25em,2.75rem)_1fr]">
+            <span
+              aria-hidden="true"
+              className="pt-[0.2em] font-sans text-[min(0.8em,1.125rem)] font-semibold text-stone-400 tabular-nums dark:text-stone-500"
+            >
               {marker}
             </span>
             <div>
