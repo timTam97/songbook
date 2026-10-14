@@ -1,5 +1,5 @@
 import { parseSongText, slugify, type AdminSong, type FieldError, type SongResponse } from '@songbook/core';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { Link, useBlocker, useNavigate, useParams } from 'react-router';
 import { SongLyrics } from '../components/SongLyrics.tsx';
 import { api, ApiError } from './api.ts';
@@ -21,19 +21,25 @@ function Field({
   label,
   error,
   hint,
+  aside,
   children,
 }: {
   id: string;
   label: string;
   error?: string;
   hint?: ReactNode;
+  /** Shown at the end of the label's line. */
+  aside?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1 block text-sm font-medium">
-        {label}
-      </label>
+      <div className="mb-1 flex items-center justify-between gap-3">
+        <label htmlFor={id} className="block text-sm font-medium">
+          {label}
+        </label>
+        {aside}
+      </div>
       {children}
       {hint && !error && <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">{hint}</p>}
       {error && (
@@ -48,6 +54,30 @@ function Field({
 interface Conflict {
   message: string;
   mine: Draft;
+}
+
+/**
+ * A textarea as tall as its text (never shorter than its min-height), so long
+ * lyrics scroll with the page instead of in a box inside a scrolling page.
+ */
+function GrowingTextarea(props: ComponentProps<'textarea'>) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const fit = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    // Collapsing it to measure can shorten the page for a moment; keep the reader where they were.
+    const y = window.scrollY;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`;
+    if (window.scrollY !== y) window.scrollTo(0, y);
+  }, []);
+  useLayoutEffect(fit, [fit, props.value]);
+  useEffect(() => {
+    // A narrower window wraps more lines.
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, [fit]);
+  return <textarea ref={ref} {...props} />;
 }
 
 export function Editor() {
@@ -262,7 +292,7 @@ export function Editor() {
             <div className="flex gap-2">
               <input
                 id="slug"
-                className={`${input} font-mono`}
+                className={`${input} min-w-0 font-mono`}
                 value={draft.slug}
                 onChange={(e) => {
                   setSlugFollowsTitle(false);
@@ -273,7 +303,7 @@ export function Editor() {
                 spellCheck={false}
                 autoCapitalize="off"
               />
-              <button type="button" className={button.secondary} onClick={() => update({ slug: slugify(draft.title) })}>
+              <button type="button" className={`${button.secondary} shrink-0 whitespace-nowrap`} onClick={() => update({ slug: slugify(draft.title) })}>
                 From title
               </button>
             </div>
@@ -284,10 +314,13 @@ export function Editor() {
             </Field>
             <Field id="copyright" label="Copyright" error={errorFor('copyright')}>
               <div className="flex gap-2">
-                <input id="copyright" className={input} value={draft.copyright} onChange={(e) => update({ copyright: e.target.value })} />
-                <button type="button" className={`${button.secondary} whitespace-nowrap`} onClick={() => update({ copyright: 'Public Domain' })}>
-                  Public Domain
-                </button>
+                <input id="copyright" className={`${input} min-w-0`} value={draft.copyright} onChange={(e) => update({ copyright: e.target.value })} />
+                {/* Only while it would change something, so it doesn't take a third of the row for nothing. */}
+                {draft.copyright.trim().toLowerCase() !== 'public domain' && (
+                  <button type="button" className={`${button.secondary} shrink-0 whitespace-nowrap`} onClick={() => update({ copyright: 'Public Domain' })}>
+                    Public Domain
+                  </button>
+                )}
               </div>
             </Field>
             <Field id="key" label="Key" error={errorFor('key')}>
@@ -338,10 +371,24 @@ export function Editor() {
             </button>
           </fieldset>
 
-          <Field id="lyrics" label="Lyrics">
-            <textarea
+          <Field
+            id="lyrics"
+            label="Lyrics"
+            aside={
+              // Below lg the preview sits under the whole form.
+              <button
+                type="button"
+                className={`${button.link} lg:hidden`}
+                aria-label="Jump to the preview"
+                onClick={() => document.getElementById('preview')?.scrollIntoView()}
+              >
+                Preview <span aria-hidden="true">&nbsp;↓</span>
+              </button>
+            }
+          >
+            <GrowingTextarea
               id="lyrics"
-              className={`${input} h-auto min-h-[24rem] py-2 font-mono text-[0.9rem] leading-relaxed`}
+              className={`${input} h-auto min-h-[24rem] py-2 font-mono leading-relaxed`}
               value={draft.lyrics}
               onChange={(e) => update({ lyrics: e.target.value })}
               spellCheck
@@ -359,8 +406,8 @@ export function Editor() {
             )}
           </div>
           <details id="lyrics-help" className="text-sm text-stone-600 dark:text-stone-400">
-            <summary className="cursor-pointer font-medium">How to format lyrics</summary>
-            <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+            <summary className="cursor-pointer py-3 font-medium">How to format lyrics</summary>
+            <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
               {MARKUP_HELP.map(([code, text]) => (
                 <div key={code} className="contents">
                   <dt>
@@ -385,7 +432,7 @@ export function Editor() {
           </div>
         </form>
 
-        <section aria-label="Preview" className="lg:sticky lg:top-16 lg:self-start">
+        <section id="preview" aria-label="Preview" className="scroll-mt-28 lg:sticky lg:top-16 lg:self-start">
           <h2 className="mb-2 text-sm font-medium text-stone-500 uppercase">Preview</h2>
           <div className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-950">
             <p className="text-sm font-medium text-stone-500 tabular-nums">Hymn {where?.after ?? '…'}</p>
@@ -405,7 +452,7 @@ export function Editor() {
             <label htmlFor="mine-lyrics" className="mb-1 block text-sm font-medium">
               Lyrics
             </label>
-            <textarea id="mine-lyrics" className={`${input} h-auto min-h-[24rem] py-2 font-mono text-[0.9rem]`} readOnly value={conflict.mine.lyrics} />
+            <GrowingTextarea id="mine-lyrics" className={`${input} h-auto min-h-[24rem] py-2 font-mono`} readOnly value={conflict.mine.lyrics} />
           </section>
         )}
       </div>

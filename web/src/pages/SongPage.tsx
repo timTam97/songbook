@@ -7,7 +7,7 @@ import { displayCopyright, neighbours, resolveSong, songPath, type Song } from '
 import { NotFound } from './NotFound.tsx';
 
 const toolButton =
-  'grid h-9 min-w-9 place-items-center rounded-md px-2 text-stone-600 hover:bg-stone-200/70 hover:text-stone-900 disabled:opacity-40 disabled:hover:bg-transparent dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100';
+  'grid h-11 min-w-11 place-items-center rounded-md px-2 text-stone-600 hover:bg-stone-200/70 hover:text-stone-900 disabled:opacity-40 disabled:hover:bg-transparent dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100';
 
 function NeighbourLink({ song, dir }: { song?: Song; dir: 'prev' | 'next' }) {
   if (!song) return <span />;
@@ -22,7 +22,7 @@ function NeighbourLink({ song, dir }: { song?: Song; dir: 'prev' | 'next' }) {
         {song.number}
         {dir === 'next' ? ' →' : ''}
       </span>
-      <span className="truncate font-medium">{song.title}</span>
+      <span className="line-clamp-2 font-medium">{song.title}</span>
     </Link>
   );
 }

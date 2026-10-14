@@ -9,7 +9,7 @@ function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="grid size-9 place-items-center rounded-md text-stone-600 hover:bg-stone-200/70 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+      className="grid size-11 place-items-center rounded-md text-stone-600 hover:bg-stone-200/70 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
       aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
       title={dark ? 'Light theme' : 'Dark theme'}
     >
@@ -46,9 +46,9 @@ export function Layout() {
       >
         Skip to content
       </a>
-      <header className="sticky top-0 z-20 border-b border-stone-200 bg-stone-50/90 backdrop-blur supports-[backdrop-filter]:bg-stone-50/75 dark:border-stone-800 dark:bg-stone-900/90 dark:supports-[backdrop-filter]:bg-stone-900/75">
-        <div className="mx-auto flex max-w-3xl items-center gap-2 px-4 py-2">
-          <Link to="/" className="font-serif text-lg font-semibold tracking-tight">
+      <header className="sticky top-0 z-20 border-b border-stone-200 bg-stone-50/95 backdrop-blur dark:border-stone-800 dark:bg-stone-900/95">
+        <div className="px-safe mx-auto flex max-w-3xl items-center gap-2 py-1">
+          <Link to="/" className="inline-flex min-h-11 items-center font-serif text-lg font-semibold tracking-tight">
             {book.title}
           </Link>
           {BETA && (
@@ -64,15 +64,16 @@ export function Layout() {
           <ThemeToggle />
         </div>
       </header>
-      <main id="main" className="mx-auto max-w-3xl px-4 pt-5 pb-20">
+      <main id="main" className="px-safe mx-auto max-w-3xl pt-5 pb-20">
         <Outlet />
       </main>
-      <footer className="no-print mx-auto max-w-3xl px-4 pb-10 text-sm text-stone-500 dark:text-stone-400">
+      <footer className="no-print px-safe mx-auto max-w-3xl pb-10 text-sm leading-relaxed text-stone-500 dark:text-stone-400">
         {index.songs.length} songs{dated} ·{' '}
+        {/* The vertical padding only widens the tap area; inline padding doesn't move the text. */}
         <a
           href="/melbourne-songs.pdf"
           title="The PDF as it was last printed. Songs added or changed since then aren't in it, and its numbers may differ."
-          className="underline decoration-stone-300 underline-offset-2 hover:text-stone-900 dark:decoration-stone-600 dark:hover:text-stone-100"
+          className="py-3.5 underline decoration-stone-300 underline-offset-2 hover:text-stone-900 dark:decoration-stone-600 dark:hover:text-stone-100"
         >
           Printed edition (11 April 2026)
         </a>{' '}

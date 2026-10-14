@@ -106,8 +106,9 @@ export function History() {
           <Alert>{error}</Alert>
         </div>
       )}
-      <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
-        <nav aria-label="Versions">
+      {/* minmax(0, …) and min-w-0: a long diff line scrolls inside its <pre>, not the page. */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
+        <nav aria-label="Versions" className="min-w-0">
           <ol className="space-y-1">
             {history.data?.history.map((h) => {
               const isCurrent = h.version === song?.version;
@@ -135,7 +136,7 @@ export function History() {
           {history.loading && !history.data && <p className="text-stone-500">Loading…</p>}
         </nav>
 
-        <div>
+        <div className="min-w-0">
           {!selected && <p className="text-stone-500">Pick a version to see it and how it differs from the current one.</p>}
           {entry.error !== undefined && <LoadFailure error={entry.error} retry={entry.reload} />}
           {shown && song && (
