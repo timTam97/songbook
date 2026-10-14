@@ -47,6 +47,17 @@ export function useLyricScale(): [number, (step: -1 | 1) => void, () => void] {
   return [current, step, () => set(null)];
 }
 
+export type ListView = 'regular' | 'compact';
+
+/** Anything but a stored "compact" (unset, an old or hand-edited value) is the regular view. */
+export const parseListView = (raw: string | null): ListView => (raw === 'compact' ? 'compact' : 'regular');
+
+/** How the hymn index lists songs. Regular is the default, so it is stored as nothing. */
+export function useListView(): [ListView, (view: ListView) => void] {
+  const [raw, set] = usePref('listView');
+  return [parseListView(raw), (view) => set(view === 'regular' ? null : view)];
+}
+
 /** Light/dark toggle; unset means "follow the system" (see /theme.js). */
 export function useTheme(): [boolean, () => void] {
   const [saved, set] = usePref('theme');

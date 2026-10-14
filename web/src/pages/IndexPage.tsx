@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useSongData } from '../lib/data.ts';
+import { useListView, type ListView } from '../lib/prefs.ts';
 import type { Snippet } from '../lib/search.ts';
 import { songPath, type Song } from '../lib/songbook.ts';
 
@@ -33,16 +34,62 @@ function SongRow({ song, children }: { song: Song; children?: ReactNode }) {
   );
 }
 
+/** One line per song, like the admin list, but the whole row is the link and stays a full tap target. */
+function CompactRow({ song }: { song: Song }) {
+  return (
+    <li>
+      <Link
+        to={songPath(song)}
+        className="-mx-3 flex min-h-11 items-center gap-x-3 border-b border-stone-200/70 px-3 text-sm hover:bg-stone-200/60 focus-visible:bg-stone-200/60 dark:border-stone-800/60 dark:hover:bg-stone-800 dark:focus-visible:bg-stone-800"
+      >
+        <span className="w-[3ch] shrink-0 text-right text-stone-500 tabular-nums dark:text-stone-400">{song.number}</span>
+        <span className="min-w-0 truncate font-medium">{song.title}</span>
+      </Link>
+    </li>
+  );
+}
+
+const VIEWS: readonly { view: ListView; label: string }[] = [
+  { view: 'regular', label: 'Regular' },
+  { view: 'compact', label: 'Compact' },
+];
+
+function ListViewToggle({ view, onChange }: { view: ListView; onChange: (view: ListView) => void }) {
+  return (
+    <div role="group" aria-label="List layout" className="flex justify-end gap-1">
+      {VIEWS.map((v) => (
+        <button
+          key={v.view}
+          type="button"
+          aria-pressed={view === v.view}
+          onClick={() => onChange(v.view)}
+          className={`h-11 rounded-md px-3 text-sm font-medium ${view === v.view ? 'bg-stone-200 text-stone-950 dark:bg-stone-800 dark:text-stone-50' : 'text-stone-600 hover:bg-stone-200/60 hover:text-stone-950 dark:text-stone-400 dark:hover:bg-stone-800/60 dark:hover:text-stone-50'}`}
+        >
+          {v.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function NumberIndex() {
   const { index } = useSongData();
+  const [view, setView] = useListView();
   return (
-    <ol>
-      {index.songs.map((s) => (
-        <SongRow key={s.number} song={s}>
-          {s.firstLine.toLowerCase().startsWith(s.title.toLowerCase().slice(0, 12)) ? undefined : s.firstLine}
-        </SongRow>
-      ))}
-    </ol>
+    <>
+      <ListViewToggle view={view} onChange={setView} />
+      <ol className="mt-1">
+        {index.songs.map((s) =>
+          view === 'compact' ? (
+            <CompactRow key={s.number} song={s} />
+          ) : (
+            <SongRow key={s.number} song={s}>
+              {s.firstLine.toLowerCase().startsWith(s.title.toLowerCase().slice(0, 12)) ? undefined : s.firstLine}
+            </SongRow>
+          ),
+        )}
+      </ol>
+    </>
   );
 }
 
@@ -122,7 +169,7 @@ export function IndexPage() {
           </ul>
         </section>
       ) : (
-        <nav aria-label="All hymns" className="mt-4">
+        <nav aria-label="All hymns" className="mt-2">
           <NumberIndex />
         </nav>
       )}
