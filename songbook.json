@@ -435,32 +435,32 @@
     },
     {
       "number": 4,
-      "title": "And Is It So! I Shall Be Like Thy Son?",
-      "slug": "and-is-it-so-i-shall-be-like-thy-son",
+      "title": "And Is It So! We Shall Be Like Thy Son?",
+      "slug": "and-is-it-so-we-shall-be-like-thy-son",
       "refs": [],
-      "firstLine": "And is it so! I shall be like Thy Son?",
+      "firstLine": "And is it so! we shall be like Thy Son",
       "sections": [
         {
           "kind": "verse",
           "lines": [
             [
               {
-                "text": "And is it so! I shall be like Thy Son?"
+                "text": "And is it so! we shall be like Thy Son,"
               }
             ],
             [
               {
-                "text": "Is this the grace which He for me has won?"
+                "text": "Is this the grace which He for us has won?"
               }
             ],
             [
               {
-                "text": "Father of glory—thought beyond all thought!"
+                "text": "Father of glory! thought beyond all thought"
               }
             ],
             [
               {
-                "text": "In glory, to His own blest likeness brought!"
+                "text": "In glory to His own blest likeness brought."
               }
             ]
           ],
@@ -471,7 +471,7 @@
           "lines": [
             [
               {
-                "text": "Oh, Jesus, Lord, who loved me like to Thee?"
+                "text": "O Jesus, Lord, who loved us like to Thee?"
               }
             ],
             [
@@ -481,12 +481,12 @@
             ],
             [
               {
-                "text": "Thy glory, Lord, while endless ages roll,"
+                "text": "Thy glory, Lord, while endless ages roll;"
               }
             ],
             [
               {
-                "text": "Myself the prize and travail of Thy soul."
+                "text": "Thy saints the prize and travail of Thy soul."
               }
             ]
           ],
@@ -497,7 +497,7 @@
           "lines": [
             [
               {
-                "text": "Yet it must be: Thy love had not its rest"
+                "text": "Yet it must be, Thy love had not its rest"
               }
             ],
             [
@@ -523,12 +523,12 @@
           "lines": [
             [
               {
-                "text": "Nor I alone; Thy loved ones, all complete"
+                "text": "Not we alone, Thy loved ones all, complete,"
               }
             ],
             [
               {
-                "text": "In glory, round Thee there with joy shall meet"
+                "text": "In glory round Thee there with joy shall meet,"
               }
             ],
             [
@@ -543,6 +543,32 @@
             ]
           ],
           "label": "4"
+        },
+        {
+          "kind": "verse",
+          "lines": [
+            [
+              {
+                "text": "The heart is satisfied, can ask no more;"
+              }
+            ],
+            [
+              {
+                "text": "All thought of self is now for ever o’er;"
+              }
+            ],
+            [
+              {
+                "text": "Christ, its unmingled object, fills the heart"
+              }
+            ],
+            [
+              {
+                "text": "In blest adoring love—its endless part"
+              }
+            ]
+          ],
+          "label": "5"
         }
       ],
       "copyright": "Public Domain"
@@ -13805,5 +13831,5 @@
     }
   ],
   "released": "31 December, 2025",
-  "updatedAt": "2026-10-13T16:13:36.351Z"
+  "updatedAt": "2026-10-24T10:49:01.849Z"
 }
