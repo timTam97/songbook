@@ -164,12 +164,14 @@ export class SongData extends Construct {
     );
 
     // --- PDF ----------------------------------------------------------------
-    // Run by the admin portal's Generate PDF button, through the admin API.
+    // Follows every edit through the stream, like the publisher; the admin portal's
+    // Regenerate button and `npm run pdf -- --stage` run it on demand.
     this.pdfGenerator = backendFunction(this, 'Pdf', 'pdf', {
       description: `Generates ${PDF_KEY} for the ${stage} site from its table`,
       memorySize: 1024,
       timeout: Duration.minutes(1),
-      // One at a time; the admin API answers a second request with "already being generated".
+      // One at a time: the admin API answers a request made while one runs with
+      // "already being generated", and the stream retries.
       reservedConcurrentExecutions: 1,
       environment: { TABLE_NAME: table.tableName, BUCKET_NAME: bucket.bucketName, DISTRIBUTION_ID: distribution.distributionId },
       bundling: {
@@ -189,11 +191,39 @@ export class SongData extends Construct {
         resources: [Stack.of(this).formatArn({ service: 'cloudfront', region: '', resource: 'distribution', resourceName: distribution.distributionId })],
       }),
     );
+    const pdfFailures = new sqs.Queue(this, 'PdfFailures', {
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      enforceSSL: true,
+      retentionPeriod: Duration.days(14),
+    });
+    this.pdfGenerator.addEventSource(
+      new DynamoEventSource(table, {
+        startingPosition: lambda.StartingPosition.LATEST,
+        // A burst of saves becomes one PDF.
+        batchSize: 100,
+        maxBatchingWindow: Duration.seconds(5),
+        retryAttempts: 3,
+        onFailure: new SqsDlq(pdfFailures),
+        // Song and book changes only: never BOOK/PDF, which the generator writes itself.
+        filters: [
+          lambda.FilterCriteria.filter({ dynamodb: { Keys: { pk: { S: lambda.FilterRule.isEqual('SONG') } } } }),
+          lambda.FilterCriteria.filter({
+            dynamodb: { Keys: { pk: { S: lambda.FilterRule.isEqual('BOOK') }, sk: { S: lambda.FilterRule.isEqual('META') } } },
+          }),
+        ],
+      }),
+    );
 
-    // --- Deploy order: seed, then publish ------------------------------------
-    // Both run on the first deploy and again whenever their code changes; the seed
-    // is a no-op once the table holds a book.
+    // --- Deploy order: seed, then the PDF, then publish ------------------------
+    // Each runs on the first deploy and again whenever its code changes; the seed is a
+    // no-op once the table holds a book. A new generator remakes the PDF, so its URL
+    // always serves the PDF the current code makes. The publish after it carries its date.
     const seeded = new triggers.Trigger(this, 'SeedOnDeploy', { handler: this.seeder, timeout: Duration.minutes(5), executeAfter: [table] });
-    this.published = new triggers.Trigger(this, 'PublishOnDeploy', { handler: this.publisher, timeout: Duration.minutes(2), executeAfter: [seeded] });
+    const pdfMade = new triggers.Trigger(this, 'PdfOnDeploy', { handler: this.pdfGenerator, timeout: Duration.minutes(2), executeAfter: [seeded] });
+    this.published = new triggers.Trigger(this, 'PublishOnDeploy', {
+      handler: this.publisher,
+      timeout: Duration.minutes(2),
+      executeAfter: [seeded, pdfMade],
+    });
   }
 }

@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Melbourne Songs: a songbook for Melbourne church gatherings, served as a searchable web app with an
 admin portal. The songs live in DynamoDB; editors change them in the portal at `/admin`, and a
-Lambda republishes `/songbook.json`, which the public site reads. Editors also generate the book's
-PDF from the portal (Book page), which a Lambda writes to `/melbourne-songs.pdf`. The book used to
+Lambda republishes `/songbook.json`, which the public site reads. Another Lambda, on the same stream,
+remakes the book's PDF at `/melbourne-songs.pdf` after every edit. The book used to
 be a LaTeX songbook; its last source is tagged `latex-final`, and its last LaTeX PDF is archived as
 `web/public/melbourne-songs-2026-04-11.pdf`. The README covers everything below in more detail, and
 `docs/plans/dynamodb-admin.md` has the design and its decisions.

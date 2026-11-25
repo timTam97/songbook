@@ -66,9 +66,14 @@ export interface BookStatus {
   pdf?: PdfStatus;
 }
 
+/** PdfStatus.generatedBy of a PDF made by the stream after an edit, and of one made by a deploy. */
+export const PDF_AFTER_EDIT = 'automatic';
+export const PDF_ON_DEPLOY = 'deploy';
+
 /** What the PDF generator last wrote to the site. */
 export interface PdfStatus {
   generatedAt: string;
+  /** The editor who asked for it, or PDF_AFTER_EDIT / PDF_ON_DEPLOY. */
   generatedBy: string;
   /** The book's `updatedAt` it was generated from; behind BookStatus.updatedAt once anything changes. */
   bookUpdatedAt: string;
@@ -80,7 +85,8 @@ export interface PdfStatus {
 /** Result of POST /pdf. */
 export interface PdfResponse {
   generated: boolean;
-  reason?: 'not-seeded';
+  /** unchanged: the stream ran it, and the latest PDF already holds the book's latest edit. */
+  reason?: 'not-seeded' | 'unchanged';
   pdf?: PdfStatus;
 }
 

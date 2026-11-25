@@ -5,8 +5,8 @@ add and change songs in the [admin portal](#song-data-and-the-admin-portal);
 the site republishes within seconds.
 
 The book began as a LaTeX songbook. Its last LaTeX source is tagged
-`latex-final`. Editors now generate the book's PDF from the admin portal,
-served at `/melbourne-songs.pdf` (see [The PDF](#the-pdf)).
+`latex-final`. The book's PDF is now made from the same data after every
+edit, at `/melbourne-songs.pdf` (see [The PDF](#the-pdf)).
 
 ## Structure
 
@@ -39,10 +39,10 @@ saves a song in the admin portal (see
   renumbered, the slug still finds the right hymn.
 - **Search** covers titles, first lines, lyrics and authors. It matches as you
   type and tolerates typos.
-- **The PDF** at `/melbourne-songs.pdf` is generated from the songs in
-  DynamoDB when an editor asks for it (see [The PDF](#the-pdf)). The footer
-  links to it once one exists, and gives its date when songs have changed
-  since. `web/public/` keeps the LaTeX book's last PDF as
+- **The PDF** at `/melbourne-songs.pdf` is remade from the songs in
+  DynamoDB after every edit, so that address always has the latest (see
+  [The PDF](#the-pdf)). The footer links to it once one exists, and gives
+  its date if it falls behind. `web/public/` keeps the LaTeX book's last PDF as
   `melbourne-songs-2026-04-11.pdf` (the file that was served at
   `/melbourne-songs.pdf` until the first generated one) and the older
   `melbourne-songs-v0.1.pdf`, at their own URLs.
@@ -141,9 +141,9 @@ The design and its decisions are in
   alphabetically) within seconds of a save, and on each deploy before the new
   `index.html` goes live. It refuses to publish an empty or invalid book. A
   site deploy never touches `songbook.json`.
-- **The PDF generator** writes `melbourne-songs.pdf` from the table when an
-  editor clicks Generate PDF (see [The PDF](#the-pdf)). A site deploy never
-  touches it either.
+- **The PDF generator** rewrites `melbourne-songs.pdf` from the table within
+  seconds of every edit (see [The PDF](#the-pdf)). A site deploy never
+  uploads it either.
 - **The seed** fills an empty table on a stage's first deploy, from
   `data/seed-songbook.json` (the `.tex` as parsed when LaTeX was retired),
   or from `SEED_FILE`: a SeedFile JSON, or a `songbook.json` from the
@@ -237,8 +237,9 @@ replaces whatever is live with what the code says.
   Revert (which saves the old content as a new version).
 - **Recently deleted:** deleted songs can be restored for 30 days. After
   that, point-in-time recovery (35 days) is the way back.
-- **Book:** the book's title, and the PDF: when it was last generated,
-  whether songs have changed since, and a Generate PDF button.
+- **Book:** the book's title, and the PDF: its address, when it was last
+  made, whether it has caught up with the latest edit, and a Regenerate PDF
+  button.
 
 Lyrics are plain text:
 
@@ -253,10 +254,18 @@ Lyrics are plain text:
 
 ### The PDF
 
-The Book page's **Generate PDF** button makes the book's PDF from the songs
-as they are now and puts it at `/melbourne-songs.pdf`, replacing the last
-one. It is not regenerated on its own after edits: the Book page says when
-songs have changed since, and the site's footer gives the PDF's date then.
+The book's PDF lives at `/melbourne-songs.pdf` on each of the site's
+hostnames, and that address always serves the latest one. It is remade from
+the table within seconds of every edit (the same stream that drives the
+publisher), and by a deploy whenever the generator's code changes. Each new
+PDF replaces the last at the same key and is invalidated in CloudFront, and
+it is served with `max-age=0, must-revalidate`, so nobody is left with a
+stale copy.
+
+The Book page shows when the PDF was last made and whether it has caught up
+with the latest edit (it warns after two minutes behind), and has a
+**Regenerate PDF** button for when it has not. If the PDF falls behind, the
+site's footer gives its date too.
 
 The PDF follows the LaTeX book: a title page, an index of titles with their
 numbers (each a link to its song), then the songs in two columns on A4, with
@@ -266,10 +275,10 @@ OpenType Computer Modern (`backend/src/fonts/`, GUST Font License), and has
 a bookmark for every song.
 
 ```
-Admin browser --POST /api/admin/pdf--> admin Lambda --invoke--> PDF Lambda --> S3: melbourne-songs.pdf
-                                                                    |  writes BOOK/PDF
-                                                                    v
-                                                   stream --> publisher --> songbook.json (carries the PDF's date)
+an edit (SONG, BOOK/META) --stream--> PDF Lambda --> S3: melbourne-songs.pdf + invalidation
+Regenerate button --POST /api/admin/pdf--> admin Lambda --invoke--^    | writes BOOK/PDF
+                                                                       v
+                                                      stream --> publisher --> songbook.json (carries the PDF's date)
 ```
 
 - `backend/src/pdf-layout.ts` lays the book out (pure, tested with fake
@@ -277,7 +286,9 @@ Admin browser --POST /api/admin/pdf--> admin Lambda --invoke--> PDF Lambda --> S
   `backend/src/pdf.ts` is the Lambda. The same book always gives the same
   bytes.
 - The Lambda may only write `melbourne-songs.pdf` in the bucket. It runs one
-  at a time; a second click while one runs is told to wait.
+  at a time: the stream retries a batch that arrives while one runs (failed
+  batches go to its own queue), and a Regenerate click is told to wait.
+- On deploy the order is seed, PDF, publish, then the pages.
 - Preview a change to the layout without deploying:
 
   ```bash

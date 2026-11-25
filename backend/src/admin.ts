@@ -487,7 +487,7 @@ async function pdfRoute(req: Request): Promise<Reply> {
   const text = out.Payload ? Buffer.from(out.Payload).toString('utf8') : '{}';
   if (out.FunctionError) throw new Error(`PDF generation failed: ${text}`);
   const result = JSON.parse(text) as PdfResponse;
-  if (!result.generated) fail(409, 'not-seeded', 'The songbook has not been set up yet.');
+  if (result.reason === 'not-seeded') fail(409, 'not-seeded', 'The songbook has not been set up yet.');
   return { body: { result } };
 }
 

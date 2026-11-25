@@ -427,8 +427,8 @@ retained and need deleting by hand).
 - **Steps 5-7:** the PR was merged, then the CI deploy, the sign-in CNAME, the prod editor, the
   smoke test and the first export followed.
 
-**Superseded (November 2026): the PDF is generated now.** Editors generate the book's PDF from
-the admin portal's Book page, and it is served at `/melbourne-songs.pdf` in place of the LaTeX
+**Superseded (November 2026): the PDF is generated now.** A Lambda remakes the book's PDF from
+the table after every edit, and it is served at `/melbourne-songs.pdf` in place of the LaTeX
 book's last PDF, which is archived as `/melbourne-songs-2026-04-11.pdf`. The README's "The PDF"
 section describes it. The redirect below was never made.
 

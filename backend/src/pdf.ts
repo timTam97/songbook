@@ -1,22 +1,27 @@
 /**
  * Generates the book's PDF from the table and puts it in the site bucket as
  * melbourne-songs.pdf (PDF_KEY), the URL the LaTeX book's PDF was served at.
+ * Each PDF replaces the last there, so the URL always serves the latest.
  *
- * Invoked by the admin portal's Generate PDF button (POST /api/admin/pdf) and
- * `npm run pdf -- --stage <stage>`. It records what it wrote in BOOK/PDF,
- * which (through the stream) republishes songbook.json, so the public site
- * shows the new PDF's date.
+ * Invoked by:
+ *  - the table's stream (SONG items and BOOK/META only), batched like the
+ *    publisher's, so the PDF follows every edit within seconds;
+ *  - the deploy, after the seed and before the publish, whenever this code changes;
+ *  - the admin portal's Regenerate button (POST /api/admin/pdf) and
+ *    `npm run pdf -- --stage <stage>`, which name who asked.
+ * It records what it wrote in BOOK/PDF, which (through the stream) republishes
+ * songbook.json, so the public site knows the PDF's date.
  *
- * Reserved concurrency 1: a second request while one runs is refused, and
- * the admin API says so.
+ * Reserved concurrency 1: a request while one runs is refused (the admin API
+ * says so; the stream retries).
  */
 import { createHash } from 'node:crypto';
 import { CloudFrontClient, CreateInvalidationCommand } from '@aws-sdk/client-cloudfront';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
-import { buildSongbook, PDF_KEY, type PdfResponse, type PdfStatus, type Songbook } from '@songbook/core';
+import { buildSongbook, PDF_AFTER_EDIT, PDF_KEY, PDF_ON_DEPLOY, type PdfResponse, type PdfStatus, type Songbook } from '@songbook/core';
 import { loadFonts, renderPdf, type Fonts, type RenderedPdf } from './pdf-render.ts';
-import { doc, env, keys, loadBook, log, tableName, type PdfItem } from './store.ts';
+import { doc, env, getItem, keys, loadBook, log, tableName, type PdfItem } from './store.ts';
 
 export const PDF_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
 
@@ -35,7 +40,11 @@ export function renderBook(book: Songbook): Promise<RenderedPdf> {
 export interface PdfEvent {
   /** Who asked for it, as the admin portal names editors. */
   actor?: string;
+  /** Present when the table's stream invoked it. */
+  Records?: unknown[];
 }
+
+const actorOf = (event: PdfEvent): string => event.actor || (Array.isArray(event.Records) ? PDF_AFTER_EDIT : PDF_ON_DEPLOY);
 
 export async function handler(event: PdfEvent = {}): Promise<PdfResponse> {
   const loaded = await loadBook();
@@ -44,6 +53,14 @@ export async function handler(event: PdfEvent = {}): Promise<PdfResponse> {
     return { generated: false, reason: 'not-seeded' };
   }
   const { meta, songs } = loaded;
+  if (Array.isArray(event?.Records)) {
+    // An edit's song and book records can arrive in separate batches: the first makes the PDF.
+    const last = await getItem<PdfItem>(keys.pdf);
+    if (last?.bookUpdatedAt === meta.updatedAt) {
+      log('PDF already holds the latest edit; not remade', { bookUpdatedAt: meta.updatedAt });
+      return { generated: false, reason: 'unchanged' };
+    }
+  }
   const book = buildSongbook({ title: meta.title, released: meta.released, updatedAt: meta.updatedAt }, songs);
   const { bytes, pages } = await renderBook(book);
   const hash = createHash('sha256').update(bytes).digest('hex');
@@ -66,7 +83,7 @@ export async function handler(event: PdfEvent = {}): Promise<PdfResponse> {
 
   const pdf: PdfStatus = {
     generatedAt: new Date().toISOString(),
-    generatedBy: event.actor || 'unknown',
+    generatedBy: actorOf(event ?? {}),
     bookUpdatedAt: meta.updatedAt,
     songCount: book.songs.length,
     pages,

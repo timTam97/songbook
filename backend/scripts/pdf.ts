@@ -3,7 +3,7 @@
  *
  *   npm run pdf -- --out .tmp/songbook.pdf                  # the frozen seed, rendered here
  *   npm run pdf -- --out .tmp/songbook.pdf --book <file>    # a songbook.json or SeedFile, rendered here
- *   npm run pdf -- --stage beta                             # generate a stage's PDF (the portal's Generate PDF button)
+ *   npm run pdf -- --stage beta                             # remake a stage's PDF now (the portal's Regenerate PDF button)
  *
  * Relative paths are relative to the directory npm was run from.
  */

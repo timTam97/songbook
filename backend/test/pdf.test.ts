@@ -14,6 +14,7 @@ const cf = mockClient(CloudFrontClient);
 
 function givenTable(meta: unknown, songs: unknown[]) {
   ddb.on(GetCommand, { Key: { pk: 'BOOK', sk: 'META' } }).resolves({ Item: meta as Record<string, unknown> | undefined });
+  ddb.on(GetCommand, { Key: { pk: 'BOOK', sk: 'PDF' } }).resolves({});
   ddb.on(QueryCommand).resolves({ Items: songs as Record<string, unknown>[] });
 }
 
@@ -54,6 +55,29 @@ describe('generating the PDF', () => {
     const record = ddb.commandCalls(PutCommand)[0].args[0].input;
     expect(record.TableName).toBe('table');
     expect(record.Item).toMatchObject({ pk: 'BOOK', sk: 'PDF', ...result.pdf, hash: expect.stringMatching(/^[0-9a-f]{64}$/) });
+  });
+
+  const STREAM = { Records: [{ eventName: 'MODIFY', dynamodb: { Keys: { pk: { S: 'SONG' }, sk: { S: '1' } } } }] };
+
+  it('says it was made automatically when the stream runs it, and by a deploy when a trigger does', async () => {
+    givenTable(META, [songItem('1', 'Alpha')]);
+    expect((await handler(STREAM)).pdf?.generatedBy).toBe('automatic');
+    expect((await handler({})).pdf?.generatedBy).toBe('deploy');
+    expect(s3.commandCalls(PutObjectCommand).map((c) => c.args[0].input.Key)).toEqual(['melbourne-songs.pdf', 'melbourne-songs.pdf']);
+  });
+
+  it('skips a stream batch when the latest PDF already holds the latest edit, but never a deploy or a request', async () => {
+    givenTable(META, [songItem('1', 'Alpha')]);
+    ddb.on(GetCommand, { Key: { pk: 'BOOK', sk: 'PDF' } }).resolves({ Item: { pk: 'BOOK', sk: 'PDF', bookUpdatedAt: META.updatedAt } });
+    expect(await handler(STREAM)).toEqual({ generated: false, reason: 'unchanged' });
+    expect(s3.commandCalls(PutObjectCommand)).toHaveLength(0);
+    expect((await handler({})).generated).toBe(true);
+    expect((await handler({ actor: 'editor@example.com' })).generated).toBe(true);
+
+    // An edit since: the stream makes a new one.
+    ddb.on(GetCommand, { Key: { pk: 'BOOK', sk: 'PDF' } }).resolves({ Item: { pk: 'BOOK', sk: 'PDF', bookUpdatedAt: '2026-01-01T00:00:00.000Z' } });
+    expect((await handler(STREAM)).generated).toBe(true);
+    expect(s3.commandCalls(PutObjectCommand)).toHaveLength(3);
   });
 
   it('generates nothing before the seed has written META', async () => {

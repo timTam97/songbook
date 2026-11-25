@@ -169,9 +169,33 @@ describe('the PDF generator', () => {
     expect(JSON.stringify(s3[0].Resource)).toMatch(/\/melbourne-songs\.pdf"\]\]\}$/);
   });
 
-  it('reads the table and records the PDF, invalidates the distribution, and nothing more', () => {
-    const actions = actionsOf(statementsFor(beta, 'SongDataPdf'));
-    expect(actions).toEqual(['cloudfront:CreateInvalidation', 'dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:Query', 's3:PutObject']);
+  it('reads the table and its stream, records the PDF, invalidates the distribution, and nothing more', () => {
+    const actions = [...new Set(actionsOf(statementsFor(beta, 'SongDataPdf')))];
+    // Besides its own work: reading the stream, and sending a failed batch to its queue.
+    const stream = ['dynamodb:DescribeStream', 'dynamodb:GetRecords', 'dynamodb:GetShardIterator', 'dynamodb:ListStreams'];
+    const queue = actions.filter((a) => a.startsWith('sqs:'));
+    expect(queue.every((a) => /^sqs:(SendMessage|GetQueueAttributes|GetQueueUrl)$/.test(a))).toBe(true);
+    expect(actions.filter((a) => !stream.includes(a) && !queue.includes(a))).toEqual([
+      'cloudfront:CreateInvalidation',
+      'dynamodb:GetItem',
+      'dynamodb:PutItem',
+      'dynamodb:Query',
+      's3:PutObject',
+    ]);
+  });
+
+  it('follows song and book changes on the stream, batched, with its own failure queue, but never its own record', () => {
+    const mappings = Object.values(beta.findResources('AWS::Lambda::EventSourceMapping'));
+    expect(mappings).toHaveLength(2);
+    const pdf = mappings.find((m) => JSON.stringify(m.Properties.FunctionName).includes('SongDataPdf'))!;
+    const publish = mappings.find((m) => JSON.stringify(m.Properties.FunctionName).includes('SongDataPublish'))!;
+    expect(pdf.Properties).toMatchObject({ BatchSize: 100, MaximumBatchingWindowInSeconds: 5, MaximumRetryAttempts: 3, StartingPosition: 'LATEST' });
+    expect(pdf.Properties.FilterCriteria.Filters).toEqual([
+      { Pattern: JSON.stringify({ dynamodb: { Keys: { pk: { S: ['SONG'] } } } }) },
+      { Pattern: JSON.stringify({ dynamodb: { Keys: { pk: { S: ['BOOK'] }, sk: { S: ['META'] } } } }) },
+    ]);
+    // Each has its own queue for batches that keep failing.
+    expect(pdf.Properties.DestinationConfig.OnFailure.Destination).not.toEqual(publish.Properties.DestinationConfig.OnFailure.Destination);
   });
 
   it('runs one at a time, with the memory to render quickly', () => {
@@ -205,7 +229,7 @@ describe('bundling', () => {
     // A real synth: fails if esbuild is missing (the fallback is Docker) or a handler does not build.
     const app = new App();
     const template = Template.fromStack(siteStack({ stage: 'beta' }, app));
-    template.resourceCountIs('Custom::Trigger', 2);
+    template.resourceCountIs('Custom::Trigger', 3);
 
     // The generator reads its fonts and fontkit's Unicode data from beside the bundle.
     const bundles = readdirSync(app.outdir)
