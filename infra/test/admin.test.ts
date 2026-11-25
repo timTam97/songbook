@@ -107,11 +107,16 @@ describe('the admin API', () => {
     expect(api.FunctionAssociations).toBeUndefined();
   });
 
-  it('lets the handler read and write songs, never scan, and invoke the publisher', () => {
+  it('lets the handler read and write songs, never scan, and invoke the publisher and the PDF generator', () => {
     const policies = Object.values(beta.findResources('AWS::IAM::Policy')).filter((p) => p.Properties.PolicyName.startsWith('AdminHandler'));
-    const actions = policies.flatMap((p) => p.Properties.PolicyDocument.Statement.flatMap((s: { Action: string | string[] }) => [s.Action].flat()));
+    const statements = policies.flatMap((p) => p.Properties.PolicyDocument.Statement as Array<{ Action: string | string[]; Resource: unknown }>);
+    const actions = statements.flatMap((s) => [s.Action].flat());
     expect(actions).toEqual(expect.arrayContaining(['dynamodb:GetItem', 'dynamodb:Query', 'dynamodb:PutItem', 'dynamodb:DeleteItem', 'lambda:InvokeFunction']));
     expect(actions).not.toContain('dynamodb:Scan');
+    expect(actions).not.toContain('s3:PutObject');
+    const invoked = JSON.stringify(statements.filter((s) => [s.Action].flat().includes('lambda:InvokeFunction')).map((s) => s.Resource));
+    expect(invoked).toMatch(/SongDataPublish/);
+    expect(invoked).toMatch(/SongDataPdf/);
   });
 });
 

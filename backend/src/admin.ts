@@ -29,6 +29,8 @@ import {
   type HistoryAction,
   type HistoryEntry,
   type HistorySummary,
+  type PdfResponse,
+  type PdfStatus,
   type PublishResponse,
   type SongFields,
   type SongListResponse,
@@ -48,6 +50,7 @@ import {
   type DeletedItem,
   type HistoryItem,
   type Key,
+  type PdfItem,
   type PublishItem,
   type SlugItem,
   type SongItem,
@@ -127,6 +130,15 @@ const toAdminSong = (item: SongItem): AdminSong => ({
   updatedAt: item.updatedAt,
   updatedBy: item.updatedBy,
   ...songFields(item),
+});
+
+const toPdfStatus = (item: PdfItem): PdfStatus => ({
+  generatedAt: item.generatedAt,
+  generatedBy: item.generatedBy,
+  bookUpdatedAt: item.bookUpdatedAt,
+  songCount: item.songCount,
+  pages: item.pages,
+  bytes: item.bytes,
 });
 
 const toHistorySummary = (item: HistoryItem): HistorySummary => {
@@ -253,7 +265,7 @@ async function saveVersion(
 // --- Routes ---------------------------------------------------------------------------------
 
 async function listSongsRoute(): Promise<Reply> {
-  const [songs, meta, published] = await Promise.all([listSongs(), getMeta(), getItem<PublishItem>(keys.publish)]);
+  const [songs, meta, published, pdf] = await Promise.all([listSongs(), getMeta(), getItem<PublishItem>(keys.publish), getItem<PdfItem>(keys.pdf)]);
   const rows: SongSummary[] = orderSongs(songs).map((s, k) => ({
     id: s.id,
     number: k + 1,
@@ -270,6 +282,7 @@ async function listSongsRoute(): Promise<Reply> {
     if (published.bookUpdatedAt) book.publishedBookUpdatedAt = published.bookUpdatedAt;
     book.publishedSongCount = published.songCount;
   }
+  if (pdf) book.pdf = toPdfStatus(pdf);
   const body: SongListResponse = { songs: rows, book };
   return { body };
 }
@@ -460,6 +473,24 @@ async function publishRoute(): Promise<Reply> {
   return { body: { result } };
 }
 
+async function pdfRoute(req: Request): Promise<Reply> {
+  let out;
+  try {
+    out = await lambda.send(
+      new InvokeCommand({ FunctionName: env('PDF_FUNCTION_NAME'), InvocationType: 'RequestResponse', Payload: JSON.stringify({ actor: req.actor }) }),
+    );
+  } catch (err) {
+    // Its reserved concurrency is 1, so a second request while one runs is throttled.
+    if (err instanceof Error && err.name === 'TooManyRequestsException') fail(409, 'conflict', 'A PDF is already being generated. Try again in a moment.');
+    throw err;
+  }
+  const text = out.Payload ? Buffer.from(out.Payload).toString('utf8') : '{}';
+  if (out.FunctionError) throw new Error(`PDF generation failed: ${text}`);
+  const result = JSON.parse(text) as PdfResponse;
+  if (!result.generated) fail(409, 'not-seeded', 'The songbook has not been set up yet.');
+  return { body: { result } };
+}
+
 const ROUTES: Record<AdminRoute, (req: Request) => Promise<Reply>> = {
   'GET /songs': listSongsRoute,
   'POST /songs': createSongRoute,
@@ -474,6 +505,7 @@ const ROUTES: Record<AdminRoute, (req: Request) => Promise<Reply>> = {
   'GET /book': getBookRoute,
   'PUT /book': putBookRoute,
   'POST /publish': publishRoute,
+  'POST /pdf': pdfRoute,
 };
 
 function respond(status: number, body: unknown): APIGatewayProxyStructuredResultV2 {

@@ -1,6 +1,8 @@
+import { formatBookDate } from '@songbook/core';
 import { Link, Outlet, ScrollRestoration } from 'react-router';
 import { useSongData } from '../lib/data.ts';
 import { useTheme } from '../lib/prefs.ts';
+import { pdfLink } from '../lib/songbook.ts';
 import { NumberJump } from './NumberJump.tsx';
 
 function ThemeToggle() {
@@ -29,15 +31,11 @@ function ThemeToggle() {
 
 const BETA = import.meta.env.VITE_STAGE === 'beta';
 
-/** "10 October 2026" in Melbourne time, from the book's ISO updatedAt. */
-export function formatUpdated(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Australia/Melbourne' });
-}
-
 export function Layout() {
   const { index } = useSongData();
   const { book } = index;
-  const dated = book.updatedAt ? ` · updated ${formatUpdated(book.updatedAt)}` : book.released ? ` · released ${book.released}` : '';
+  const dated = book.updatedAt ? ` · updated ${formatBookDate(book.updatedAt)}` : book.released ? ` · released ${book.released}` : '';
+  const pdf = pdfLink(book);
   return (
     <>
       <a
@@ -68,16 +66,25 @@ export function Layout() {
         <Outlet />
       </main>
       <footer className="no-print px-safe mx-auto max-w-3xl pb-10 text-sm leading-relaxed text-stone-500 dark:text-stone-400">
-        {index.songs.length} songs{dated} ·{' '}
-        {/* The vertical padding only widens the tap area; inline padding doesn't move the text. */}
-        <a
-          href="/melbourne-songs.pdf"
-          title="The PDF as it was last printed. Songs added or changed since then aren't in it, and its numbers may differ."
-          className="py-3.5 underline decoration-stone-300 underline-offset-2 hover:text-stone-900 dark:decoration-stone-600 dark:hover:text-stone-100"
-        >
-          Printed edition (11 April 2026)
-        </a>{' '}
-        (PDF, without later changes)
+        {index.songs.length} songs{dated}
+        {pdf && (
+          <>
+            {' · '}
+            {/* The vertical padding only widens the tap area; inline padding doesn't move the text. */}
+            <a
+              href={pdf.href}
+              title={
+                pdf.olderThanSite
+                  ? "The book to print. Songs added or changed since it was made aren't in it, and its numbers may differ."
+                  : 'The book to print, with every song.'
+              }
+              className="py-3.5 underline decoration-stone-300 underline-offset-2 hover:text-stone-900 dark:decoration-stone-600 dark:hover:text-stone-100"
+            >
+              PDF
+            </a>
+            {pdf.olderThanSite && ` (${pdf.olderThanSite}, without later changes)`}
+          </>
+        )}
       </footer>
       <ScrollRestoration />
     </>

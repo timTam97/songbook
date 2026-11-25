@@ -80,9 +80,9 @@ describe('SiteStack', () => {
     expect(JSON.stringify(pages[1].DependsOn ?? [])).toContain('DeployAssets');
   });
 
-  it('never lets a site deploy upload or overwrite songbook.json', () => {
+  it('never lets a site deploy upload or overwrite songbook.json or the generated PDF', () => {
     const pages = Object.entries(template.findResources('Custom::CDKBucketDeployment')).find(([id]) => id.startsWith('DeployPages'))!;
-    expect(pages[1].Properties.Exclude).toEqual(['songbook.json']);
+    expect(pages[1].Properties.Exclude).toEqual(['songbook.json', 'melbourne-songs.pdf']);
   });
 
   it('puts pages live only after the seed and the publish have run', () => {

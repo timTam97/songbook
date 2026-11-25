@@ -1,9 +1,12 @@
 /**
  * The songbook's data in one stage: the table, the seed that fills it once,
- * and the publisher that turns it into songbook.json in the site bucket.
+ * the publisher that turns it into songbook.json in the site bucket, and the
+ * generator that turns it into the PDF there.
  */
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PDF_KEY } from '@songbook/core';
 import { Duration, RemovalPolicy, Stack } from 'aws-cdk-lib';
 import type * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
@@ -23,6 +26,19 @@ const REPO_ROOT = fileURLToPath(new URL('../../', import.meta.url));
 
 /** The key the publisher writes and nothing else may: see SiteStack's DeployPages. */
 export const SONGBOOK_KEY = 'songbook.json';
+
+/**
+ * Files the PDF generator reads at run time, copied beside its bundle: the
+ * fonts, and the Unicode data that fontkit's unicode-properties loads from
+ * next to its own module (in a bundle, next to index.mjs).
+ */
+const PDF_RUNTIME_FILES = [
+  { from: path.join('backend', 'src', 'fonts'), to: 'fonts' },
+  {
+    from: path.relative(REPO_ROOT, createRequire(path.join(REPO_ROOT, 'backend', 'package.json')).resolve('unicode-properties/data.trie')),
+    to: 'data.trie',
+  },
+];
 
 /**
  * A Lambda built from backend/src/<name>.ts: Node.js 22 on arm64, bundled
@@ -66,6 +82,7 @@ export interface SongDataProps {
 export class SongData extends Construct {
   readonly table: dynamodb.Table;
   readonly publisher: NodejsFunction;
+  readonly pdfGenerator: NodejsFunction;
   readonly seeder: NodejsFunction;
   /** Runs after the seed on deploy; the new index.html must not go live before it. */
   readonly published: triggers.Trigger;
@@ -132,14 +149,44 @@ export class SongData extends Construct {
         maxBatchingWindow: Duration.seconds(5),
         retryAttempts: 3,
         onFailure: new SqsDlq(failures),
-        // Song and book changes only: history, slugs, deleted copies and the publisher's own
-        // BOOK/PUBLISH record never trigger a publish.
+        // Song and book changes, and a new PDF (songbook.json carries its date). History, slugs,
+        // deleted copies and the publisher's own BOOK/PUBLISH record never trigger a publish.
         filters: [
           lambda.FilterCriteria.filter({ dynamodb: { Keys: { pk: { S: lambda.FilterRule.isEqual('SONG') } } } }),
           lambda.FilterCriteria.filter({
             dynamodb: { Keys: { pk: { S: lambda.FilterRule.isEqual('BOOK') }, sk: { S: lambda.FilterRule.isEqual('META') } } },
           }),
+          lambda.FilterCriteria.filter({
+            dynamodb: { Keys: { pk: { S: lambda.FilterRule.isEqual('BOOK') }, sk: { S: lambda.FilterRule.isEqual('PDF') } } },
+          }),
         ],
+      }),
+    );
+
+    // --- PDF ----------------------------------------------------------------
+    // Run by the admin portal's Generate PDF button, through the admin API.
+    this.pdfGenerator = backendFunction(this, 'Pdf', 'pdf', {
+      description: `Generates ${PDF_KEY} for the ${stage} site from its table`,
+      memorySize: 1024,
+      timeout: Duration.minutes(1),
+      // One at a time; the admin API answers a second request with "already being generated".
+      reservedConcurrentExecutions: 1,
+      environment: { TABLE_NAME: table.tableName, BUCKET_NAME: bucket.bucketName, DISTRIBUTION_ID: distribution.distributionId },
+      bundling: {
+        commandHooks: {
+          beforeBundling: () => [],
+          beforeInstall: () => [],
+          afterBundling: (inputDir, outputDir) =>
+            PDF_RUNTIME_FILES.map(({ from, to }) => `cp -R "${path.join(inputDir, from)}" "${path.join(outputDir, to)}"`),
+        },
+      },
+    });
+    this.pdfGenerator.addToRolePolicy(tableActions('GetItem', 'Query', 'PutItem'));
+    this.pdfGenerator.addToRolePolicy(new iam.PolicyStatement({ actions: ['s3:PutObject'], resources: [bucket.arnForObjects(PDF_KEY)] }));
+    this.pdfGenerator.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['cloudfront:CreateInvalidation'],
+        resources: [Stack.of(this).formatArn({ service: 'cloudfront', region: '', resource: 'distribution', resourceName: distribution.distributionId })],
       }),
     );
 

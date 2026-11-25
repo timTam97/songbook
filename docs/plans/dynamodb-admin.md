@@ -427,6 +427,11 @@ retained and need deleting by hand).
 - **Steps 5-7:** the PR was merged, then the CI deploy, the sign-in CNAME, the prod editor, the
   smoke test and the first export followed.
 
+**Superseded (November 2026): the PDF is generated now.** Editors generate the book's PDF from
+the admin portal's Book page, and it is served at `/melbourne-songs.pdf` in place of the LaTeX
+book's last PDF, which is archived as `/melbourne-songs-2026-04-11.pdf`. The README's "The PDF"
+section describes it. The redirect below was never made.
+
 **Later, not part of the cutover: redirect the PDF URL to the site.** At some point after the
 cutover, `/melbourne-songs.pdf` is to redirect to the songs site's home page. When that happens:
 

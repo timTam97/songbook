@@ -4,6 +4,8 @@
  *   BOOK     / META         book title and release text, updatedAt (bumped by every edit), seededFrom
  *   BOOK     / PUBLISH      what the publisher last wrote to S3 (kept apart from META so the
  *                          publisher's own write does not trigger another publish)
+ *   BOOK     / PDF          what the PDF generator last wrote to S3; through the stream, a new
+ *                          PDF republishes songbook.json, which carries its date
  *   SONG     / <id>         the current song: SongFields + version, updatedAt, updatedBy
  *   HIST#<id>/ v000003      a snapshot of every version, append-only while the song exists
  *   DELETED  / <id>         safety copy of a deleted song, removed by TTL after 30 days
@@ -11,7 +13,7 @@
  */
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, paginateQuery } from '@aws-sdk/lib-dynamodb';
-import type { SongFields } from '@songbook/core';
+import { validateSong, type SongFields } from '@songbook/core';
 
 export const doc = DynamoDBDocumentClient.from(new DynamoDBClient({}), {
   marshallOptions: { removeUndefinedValues: true },
@@ -30,6 +32,7 @@ export type Key = { pk: string; sk: string };
 export const keys = {
   meta: { pk: 'BOOK', sk: 'META' },
   publish: { pk: 'BOOK', sk: 'PUBLISH' },
+  pdf: { pk: 'BOOK', sk: 'PDF' },
   song: (id: string): Key => ({ pk: 'SONG', sk: id }),
   history: (id: string, version: number): Key => ({ pk: `HIST#${id}`, sk: versionKey(version) }),
   deleted: (id: string): Key => ({ pk: 'DELETED', sk: id }),
@@ -54,6 +57,18 @@ export interface PublishItem extends Key {
   songCount: number;
   /** META.updatedAt of the book that was published. */
   bookUpdatedAt?: string;
+}
+
+export interface PdfItem extends Key {
+  generatedAt: string;
+  generatedBy: string;
+  /** META.updatedAt of the book the PDF was generated from. */
+  bookUpdatedAt: string;
+  songCount: number;
+  pages: number;
+  bytes: number;
+  /** sha256 of the PDF. */
+  hash: string;
 }
 
 export interface SongItem extends Key, SongFields {
@@ -122,6 +137,25 @@ export async function queryPartition<T>(pk: string, options: { consistent?: bool
 
 export const getMeta = () => getItem<MetaItem>(keys.meta);
 export const listSongs = () => queryPartition<SongItem>('SONG');
+
+/**
+ * The book's metadata and every current song, checked the way the public book
+ * needs them: undefined before the seed has written META, and an error for a
+ * book with no songs or an invalid song.
+ */
+export async function loadBook(): Promise<{ meta: MetaItem; songs: SongFields[] } | undefined> {
+  const meta = await getMeta();
+  // The seed writes META last, so this is an empty or half-seeded table.
+  if (!meta) return undefined;
+  const songs = (await listSongs()).map(songFields);
+  if (songs.length === 0) throw new Error('Refusing to publish a songbook with no songs');
+  const invalid = songs.flatMap((song) => {
+    const errors = validateSong(song);
+    return errors.length > 0 ? [`${song.slug}: ${errors.map((e) => e.message).join(' ')}`] : [];
+  });
+  if (invalid.length > 0) throw new Error(`Refusing to publish invalid songs: ${invalid.join('; ')}`);
+  return { meta, songs };
+}
 
 /** One JSON log line, so CloudWatch Logs Insights can filter on fields. */
 export function log(message: string, fields: Record<string, unknown> = {}): void {

@@ -1,4 +1,4 @@
-import { lineText, type Song, type Songbook } from '@songbook/core';
+import { copyrightLine, formatBookDate, lineText, PDF_KEY, type Song, type Songbook } from '@songbook/core';
 
 export type { Line, Section, Segment, Song, Songbook } from '@songbook/core';
 export { lineText };
@@ -9,8 +9,21 @@ export const songText = (song: Song): string =>
 /** Canonical URL. The slug keeps shared links pointing at the right hymn if numbers shift. */
 export const songPath = (song: Song): string => `/songs/${song.number}/${song.slug}`;
 
-export const displayCopyright = (song: Song): string | undefined =>
-  song.copyright === undefined ? undefined : song.copyright === 'Public Domain' ? 'Public Domain' : `© ${song.copyright}`;
+export const displayCopyright = (song: Song): string | undefined => copyrightLine(song.copyright);
+
+export interface PdfLink {
+  href: string;
+  /** Set when songs have changed since the PDF was generated: the date of the book it holds. */
+  olderThanSite?: string;
+}
+
+/** The PDF the editors last generated, or undefined if they never have. */
+export function pdfLink(book: Songbook): PdfLink | undefined {
+  if (!book.pdf) return undefined;
+  const link: PdfLink = { href: `/${PDF_KEY}` };
+  if (book.updatedAt && book.pdf.bookUpdatedAt < book.updatedAt) link.olderThanSite = formatBookDate(book.pdf.bookUpdatedAt);
+  return link;
+}
 
 export interface SongIndex {
   book: Songbook;

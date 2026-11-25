@@ -34,7 +34,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, fileURLToPath(new URL('.', import.meta.url)), '');
   const target = env.DEV_PROXY_TARGET?.trim();
   return {
-    // public/ (copied to the site root as-is) holds the printed editions, melbourne-songs.pdf among them.
+    // public/ (copied to the site root as-is) holds the LaTeX book's archived PDFs. The current
+    // PDF, melbourne-songs.pdf, is generated from the admin portal and never part of the build.
     plugins: [react(), tailwindcss(), ...(target ? [] : [seedSongbook()])],
     server: {
       host: '127.0.0.1',

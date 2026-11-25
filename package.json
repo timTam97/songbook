@@ -21,6 +21,7 @@
     "seed": "npm run seed -w backend --",
     "republish": "npm run republish -w backend --",
     "check:published": "npm run check:published -w backend --",
-    "export": "npm run export -w backend --"
+    "export": "npm run export -w backend --",
+    "pdf": "npm run pdf -w backend --"
   }
 }

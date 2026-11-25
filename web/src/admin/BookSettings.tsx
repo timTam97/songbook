@@ -1,6 +1,7 @@
 import type { BookStatus } from '@songbook/core';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from './api.ts';
+import { PdfPanel } from './PdfPanel.tsx';
 import { PublishStatus } from './SongList.tsx';
 import { Alert, button, fullTime, input, LoadFailure, messageOf, PageTitle, useAsync, useTitle } from './ui.tsx';
 
@@ -69,6 +70,7 @@ export function BookSettings() {
           </>
         )}
       </dl>
+      <PdfPanel book={status} onGenerated={book.reload} />
     </>
   );
 }

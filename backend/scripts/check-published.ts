@@ -1,7 +1,7 @@
 /**
  * Check that a stage's public songbook.json is the frozen seed
  * (data/seed-songbook.json), ignoring the fields only the published book has
- * (schemaVersion, updatedAt). Run it after the first deploy of a stage, or
+ * (schemaVersion, updatedAt, pdf). Run it after the first deploy of a stage, or
  * after `npm run seed -- --reset`; once editors save changes it will differ.
  *
  *   npm run check:published -- --stage beta
@@ -16,7 +16,7 @@ if (!res.ok) fail(`${url}: HTTP ${res.status}`);
 const type = res.headers.get('content-type');
 if (type !== 'application/json') fail(`${url}: Content-Type is ${type}, expected application/json`);
 
-const { schemaVersion, updatedAt, ...published } = (await res.json()) as Songbook;
+const { schemaVersion, updatedAt, pdf, ...published } = (await res.json()) as Songbook;
 const { book: expected, source } = frozenSeed();
 if (schemaVersion !== 1) fail(`schemaVersion is ${schemaVersion}, expected 1`);
 if (!updatedAt) fail('updatedAt is missing');

@@ -52,12 +52,22 @@ export interface Song extends SongFields {
   firstLine: string;
 }
 
+/** The book's PDF (PDF_KEY), which editors generate from the admin portal. */
+export interface BookPdf {
+  /** ISO 8601 time it was generated. */
+  generatedAt: string;
+  /** The book's `updatedAt` when it was generated: later edits are not in it. */
+  bookUpdatedAt: string;
+}
+
 export interface BookMeta {
   title: string;
-  /** Free-text release date, as printed on the PDF. */
+  /** Free-text release date, as printed on the LaTeX book's PDF. */
   released?: string;
   /** ISO 8601 time of the latest edit to the book. */
   updatedAt?: string;
+  /** The latest generated PDF, if there is one. */
+  pdf?: BookPdf;
 }
 
 export interface Songbook extends BookMeta {

@@ -37,6 +37,7 @@ export interface AdminProps {
   hostnames: string[];
   table: dynamodb.ITable;
   publisher: lambda.IFunction;
+  pdfGenerator: lambda.IFunction;
   /** Where managed login is hosted (see stageAuthDomain). */
   authDomain: AuthDomain;
   responseHeadersPolicy: cloudfront.IResponseHeadersPolicy;
@@ -152,7 +153,11 @@ export class Admin extends Construct {
     const table = props.table;
     this.handler = backendFunction(this, 'Handler', 'admin', {
       description: `Admin API for the ${stage} songbook`,
-      environment: { TABLE_NAME: table.tableName, PUBLISH_FUNCTION_NAME: props.publisher.functionName },
+      environment: {
+        TABLE_NAME: table.tableName,
+        PUBLISH_FUNCTION_NAME: props.publisher.functionName,
+        PDF_FUNCTION_NAME: props.pdfGenerator.functionName,
+      },
     });
     this.handler.addToRolePolicy(
       new iam.PolicyStatement({
@@ -161,6 +166,7 @@ export class Admin extends Construct {
       }),
     );
     props.publisher.grantInvoke(this.handler);
+    props.pdfGenerator.grantInvoke(this.handler);
 
     this.api = new apigwv2.HttpApi(this, 'Api', {
       apiName: `melbourne-songs-${stage}-admin`,

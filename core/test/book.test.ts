@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildSongbook, SCHEMA_VERSION } from '../src/book.ts';
+import { buildSongbook, formatBookDate, SCHEMA_VERSION } from '../src/book.ts';
 import { compareCodePoints, orderSongs, songOrderKey } from '../src/order.ts';
-import { deriveFirstLine, MAX_GENERATED_SLUG, slugify, uniqueSlug } from '../src/song.ts';
+import { copyrightLine, deriveFirstLine, MAX_GENERATED_SLUG, slugify, uniqueSlug } from '../src/song.ts';
 import type { SongFields } from '../src/types.ts';
 
 const song = (title: string, slug = slugify(title), extra: Partial<SongFields> = {}): SongFields => ({
@@ -77,7 +77,28 @@ describe('buildSongbook', () => {
   });
 });
 
+describe('the PDF in the book', () => {
+  it("carries the latest PDF's dates, and nothing else of it", () => {
+    const pdf = { generatedAt: '2026-11-26T01:00:00.000Z', bookUpdatedAt: '2026-11-25T00:00:00.000Z' };
+    const book = buildSongbook({ title: 'T', updatedAt: '2026-11-25T00:00:00.000Z', pdf: { ...pdf, pages: 3 } as typeof pdf }, [song('Alpha')]);
+    expect(book.pdf).toEqual(pdf);
+    expect(buildSongbook({ title: 'T' }, [song('Alpha')])).not.toHaveProperty('pdf');
+  });
+
+  it('prints dates in Melbourne time', () => {
+    // 01:30 on the 26th in Melbourne (UTC+11 in summer) is still the 25th in UTC.
+    expect(formatBookDate('2026-11-25T14:30:00.000Z')).toBe('26 November 2026');
+    expect(formatBookDate('2026-07-01T13:00:00.000Z')).toBe('1 July 2026');
+  });
+});
+
 describe('song helpers', () => {
+  it('prints a copyright holder after ©, but not "Public Domain"', () => {
+    expect(copyrightLine('CityAlight')).toBe('© CityAlight');
+    expect(copyrightLine('Public Domain')).toBe('Public Domain');
+    expect(copyrightLine(undefined)).toBeUndefined();
+  });
+
   it('derives the first line without non-breaking spaces or trailing punctuation', () => {
     expect(deriveFirstLine([{ kind: 'verse', lines: [[{ text: 'Once\u00A0in ' }, { text: 'royal;', italic: true }], [{ text: 'x' }]] }])).toBe(
       'Once in royal',
