@@ -6,9 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Melbourne Songs: a songbook for Melbourne church gatherings, served as a searchable web app with an
 admin portal. The songs live in DynamoDB; editors change them in the portal at `/admin`, and a
-Lambda republishes `/songbook.json`, which the public site reads. The book used to be a LaTeX
-songbook; its last source is tagged `latex-final`, and its last printed PDF is kept at
-`web/public/melbourne-songs.pdf`. The README covers everything below in more detail, and
+Lambda republishes `/songbook.json`, which the public site reads. Another Lambda, on the same stream,
+remakes the book's PDF at `/melbourne-songs.pdf` after every edit. The book used to
+be a LaTeX songbook; its last source is tagged `latex-final`, and its last LaTeX PDF is archived as
+`web/public/melbourne-songs-2026-04-11.pdf`. The README covers everything below in more detail, and
 `docs/plans/dynamodb-admin.md` has the design and its decisions.
 
 ## Commands
@@ -29,8 +30,9 @@ npm run deploy:beta  # build with the Beta badge and deploy MelbourneSongsBeta
 
 - `core/` - shared song model: types, editor markup (`parseSongText`/`formatSongText`), validation,
   alphabetical order and `buildSongbook` (numbers are derived from that order).
-- `backend/` - Lambdas (seed, publish, admin API) and scripts that drive a deployed stage
-  (`npm run seed|republish|check:published|export`).
+- `backend/` - Lambdas (seed, publish, PDF, admin API) and scripts that drive a deployed stage
+  (`npm run seed|republish|check:published|export|pdf`). `npm run pdf -- --out .tmp/x.pdf`
+  renders the PDF locally.
 - `web/` - React public site and admin portal (`web/src/admin/`). `web/public/` is copied to the
   site root as-is.
 - `infra/` - CDK app. `MelbourneSongsSite` (prod) is only built in CI on master; everywhere else
@@ -45,4 +47,5 @@ npm run deploy:beta  # build with the Beta badge and deploy MelbourneSongsBeta
   (a test enforces it).
 - Preserve the prod stack's logical IDs (an infra test asserts them), so a deploy updates the live
   distribution and bucket in place instead of replacing them.
-- A site deploy must never overwrite `songbook.json`; only the publisher writes it.
+- A site deploy must never overwrite `songbook.json` or `melbourne-songs.pdf`; only the publisher
+  and the PDF Lambda write them.

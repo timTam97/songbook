@@ -2,8 +2,8 @@
  * Rebuilds the public songbook.json from the table and puts it in the site bucket.
  *
  * Invoked by:
- *  - the table's stream (SONG items and BOOK/META only), batched so a burst of
- *    saves is one publish; skipped when the book has not changed;
+ *  - the table's stream (SONG items, BOOK/META and BOOK/PDF only), batched so a
+ *    burst of saves is one publish; skipped when the book has not changed;
  *  - the deploy, after the seed and before the new index.html goes live;
  *  - the admin API's Republish button and `npm run republish`.
  * The last two always write (a forced publish).
@@ -14,8 +14,8 @@ import { createHash } from 'node:crypto';
 import { CloudFrontClient, CreateInvalidationCommand } from '@aws-sdk/client-cloudfront';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { buildSongbook, validateSong } from '@songbook/core';
-import { doc, env, getItem, getMeta, keys, listSongs, log, songFields, tableName, type PublishItem } from './store.ts';
+import { buildSongbook } from '@songbook/core';
+import { doc, env, getItem, keys, loadBook, log, tableName, type PdfItem, type PublishItem } from './store.ts';
 
 export const SONGBOOK_KEY = 'songbook.json';
 export const SONGBOOK_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
@@ -32,22 +32,23 @@ export interface PublishResult {
 }
 
 export async function publish({ force }: { force: boolean }): Promise<PublishResult> {
-  const meta = await getMeta();
-  if (!meta) {
-    // The seed writes META last, so this is an empty or half-seeded table.
+  const loaded = await loadBook();
+  if (!loaded) {
     log('not seeded yet; nothing published');
     return { published: false, reason: 'not-seeded' };
   }
-  const songs = (await listSongs()).map(songFields);
-  if (songs.length === 0) throw new Error('Refusing to publish a songbook with no songs');
+  const { meta, songs } = loaded;
+  const pdf = await getItem<PdfItem>(keys.pdf);
 
-  const invalid = songs.flatMap((song) => {
-    const errors = validateSong(song);
-    return errors.length > 0 ? [`${song.slug}: ${errors.map((e) => e.message).join(' ')}`] : [];
-  });
-  if (invalid.length > 0) throw new Error(`Refusing to publish invalid songs: ${invalid.join('; ')}`);
-
-  const book = buildSongbook({ title: meta.title, released: meta.released, updatedAt: meta.updatedAt }, songs);
+  const book = buildSongbook(
+    {
+      title: meta.title,
+      released: meta.released,
+      updatedAt: meta.updatedAt,
+      pdf: pdf ? { generatedAt: pdf.generatedAt, bookUpdatedAt: pdf.bookUpdatedAt } : undefined,
+    },
+    songs,
+  );
   const body = JSON.stringify(book);
   const hash = createHash('sha256').update(body).digest('hex');
 

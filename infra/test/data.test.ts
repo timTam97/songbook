@@ -1,6 +1,7 @@
-import { readdirSync, readFileSync, rmSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { App } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -153,8 +154,57 @@ describe('the publisher', () => {
         Filters: [
           { Pattern: JSON.stringify({ dynamodb: { Keys: { pk: { S: ['SONG'] } } } }) },
           { Pattern: JSON.stringify({ dynamodb: { Keys: { pk: { S: ['BOOK'] }, sk: { S: ['META'] } } } }) },
+          { Pattern: JSON.stringify({ dynamodb: { Keys: { pk: { S: ['BOOK'] }, sk: { S: ['PDF'] } } } }) },
         ],
       },
+    });
+  });
+});
+
+describe('the PDF generator', () => {
+  it('may write melbourne-songs.pdf and nothing else in the bucket', () => {
+    const s3 = statementsFor(beta, 'SongDataPdf').filter((s) => [s.Action].flat().some((a) => a.startsWith('s3:')));
+    expect(s3).toHaveLength(1);
+    expect(s3[0].Action).toBe('s3:PutObject');
+    expect(JSON.stringify(s3[0].Resource)).toMatch(/\/melbourne-songs\.pdf"\]\]\}$/);
+  });
+
+  it('reads the table and its stream, records the PDF, invalidates the distribution, and nothing more', () => {
+    const actions = [...new Set(actionsOf(statementsFor(beta, 'SongDataPdf')))];
+    // Besides its own work: reading the stream, and sending a failed batch to its queue.
+    const stream = ['dynamodb:DescribeStream', 'dynamodb:GetRecords', 'dynamodb:GetShardIterator', 'dynamodb:ListStreams'];
+    const queue = actions.filter((a) => a.startsWith('sqs:'));
+    expect(queue.every((a) => /^sqs:(SendMessage|GetQueueAttributes|GetQueueUrl)$/.test(a))).toBe(true);
+    expect(actions.filter((a) => !stream.includes(a) && !queue.includes(a))).toEqual([
+      'cloudfront:CreateInvalidation',
+      'dynamodb:GetItem',
+      'dynamodb:PutItem',
+      'dynamodb:Query',
+      's3:PutObject',
+    ]);
+  });
+
+  it('follows song and book changes on the stream, batched, with its own failure queue, but never its own record', () => {
+    const mappings = Object.values(beta.findResources('AWS::Lambda::EventSourceMapping'));
+    expect(mappings).toHaveLength(2);
+    const pdf = mappings.find((m) => JSON.stringify(m.Properties.FunctionName).includes('SongDataPdf'))!;
+    const publish = mappings.find((m) => JSON.stringify(m.Properties.FunctionName).includes('SongDataPublish'))!;
+    expect(pdf.Properties).toMatchObject({ BatchSize: 100, MaximumBatchingWindowInSeconds: 5, MaximumRetryAttempts: 3, StartingPosition: 'LATEST' });
+    expect(pdf.Properties.FilterCriteria.Filters).toEqual([
+      { Pattern: JSON.stringify({ dynamodb: { Keys: { pk: { S: ['SONG'] } } } }) },
+      { Pattern: JSON.stringify({ dynamodb: { Keys: { pk: { S: ['BOOK'] }, sk: { S: ['META'] } } } }) },
+    ]);
+    // Each has its own queue for batches that keep failing.
+    expect(pdf.Properties.DestinationConfig.OnFailure.Destination).not.toEqual(publish.Properties.DestinationConfig.OnFailure.Destination);
+  });
+
+  it('runs one at a time, with the memory to render quickly', () => {
+    beta.hasResourceProperties('AWS::Lambda::Function', {
+      Description: Match.stringLikeRegexp('Generates melbourne-songs.pdf'),
+      ReservedConcurrentExecutions: 1,
+      MemorySize: 1024,
+      Runtime: 'nodejs22.x',
+      Architectures: ['arm64'],
     });
   });
 });
@@ -175,11 +225,29 @@ describe('the seed', () => {
 });
 
 describe('bundling', () => {
-  it('bundles the Lambdas locally with esbuild', () => {
+  it('bundles the Lambdas locally with esbuild, and the PDF generator as deployed renders a PDF', () => {
     // A real synth: fails if esbuild is missing (the fallback is Docker) or a handler does not build.
-    const template = Template.fromStack(siteStack({ stage: 'beta' }, new App()));
-    template.resourceCountIs('Custom::Trigger', 2);
-  }, 120_000);
+    const app = new App();
+    const template = Template.fromStack(siteStack({ stage: 'beta' }, app));
+    template.resourceCountIs('Custom::Trigger', 3);
+
+    // The generator reads its fonts and fontkit's Unicode data from beside the bundle.
+    const bundles = readdirSync(app.outdir)
+      .filter((d) => d.startsWith('asset.'))
+      .map((d) => path.join(app.outdir, d));
+    const pdf = bundles.find((d) => existsSync(path.join(d, 'fonts')));
+    expect(pdf).toBeDefined();
+    expect(existsSync(path.join(pdf!, 'data.trie'))).toBe(true);
+    expect(existsSync(path.join(pdf!, 'fonts', 'GUST-FONT-LICENSE.txt'))).toBe(true);
+
+    // Run the bundle in plain Node, as Lambda would.
+    const book = { title: 'Test', updatedAt: '2026-11-25T00:00:00.000Z', songs: [{ number: 1, title: 'Alpha', slug: 'alpha', firstLine: 'la', refs: [], sections: [{ kind: 'verse', label: '1', lines: [[{ text: 'la' }]] }] }] };
+    const script = `const { renderBook } = await import(${JSON.stringify(pathToFileURL(path.join(pdf!, 'index.mjs')).href)});
+      const { bytes, pages } = await renderBook(${JSON.stringify(book)});
+      console.log(JSON.stringify({ head: bytes.subarray(0, 5).toString('latin1'), pages }));`;
+    const out = execFileSync(process.execPath, ['--input-type=module', '-e', script], { encoding: 'utf8' });
+    expect(JSON.parse(out)).toEqual({ head: '%PDF-', pages: 3 });
+  }, 180_000);
 });
 
 describe('no personal details in the infrastructure code', () => {

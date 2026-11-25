@@ -80,18 +80,23 @@ describe('SiteStack', () => {
     expect(JSON.stringify(pages[1].DependsOn ?? [])).toContain('DeployAssets');
   });
 
-  it('never lets a site deploy upload or overwrite songbook.json', () => {
+  it('never lets a site deploy upload or overwrite songbook.json or the generated PDF', () => {
     const pages = Object.entries(template.findResources('Custom::CDKBucketDeployment')).find(([id]) => id.startsWith('DeployPages'))!;
-    expect(pages[1].Properties.Exclude).toEqual(['songbook.json']);
+    expect(pages[1].Properties.Exclude).toEqual(['songbook.json', 'melbourne-songs.pdf']);
   });
 
-  it('puts pages live only after the seed and the publish have run', () => {
+  it('puts pages live only after the seed, the PDF and the publish have run', () => {
     const triggers = template.findResources('Custom::Trigger');
     const id = (prefix: string) => Object.keys(triggers).find((k) => k.startsWith(prefix))!;
     const seed = id('SongDataSeedOnDeploy');
+    const pdf = id('SongDataPdfOnDeploy');
     const publish = id('SongDataPublishOnDeploy');
     expect(seed).toBeDefined();
+    expect(pdf).toBeDefined();
     expect(publish).toBeDefined();
+    expect(triggers[pdf].DependsOn).toEqual(expect.arrayContaining([expect.stringMatching(/^SongDataSeedOnDeploy/)]));
+    // The publish after the PDF carries its date.
+    expect(triggers[publish].DependsOn).toEqual(expect.arrayContaining([expect.stringMatching(/^SongDataPdfOnDeploy/)]));
     expect(triggers[publish].DependsOn).toEqual(expect.arrayContaining([expect.stringMatching(/^SongDataSeedOnDeploy/)]));
     expect(triggers[publish].DependsOn).toEqual(expect.arrayContaining([expect.stringMatching(/^DeployAssets/)]));
     const pages = Object.entries(template.findResources('Custom::CDKBucketDeployment')).find(([k]) => k.startsWith('DeployPages'))!;

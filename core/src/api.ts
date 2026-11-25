@@ -22,6 +22,7 @@ export const ADMIN_ROUTES = [
   'GET /book',
   'PUT /book',
   'POST /publish',
+  'POST /pdf',
 ] as const;
 
 export type AdminRoute = (typeof ADMIN_ROUTES)[number];
@@ -61,6 +62,32 @@ export interface BookStatus {
   /** The `updatedAt` of the book that was published; behind `updatedAt` while a publish is pending or stuck. */
   publishedBookUpdatedAt?: string;
   publishedSongCount?: number;
+  /** The latest generated PDF; absent until one has been generated. */
+  pdf?: PdfStatus;
+}
+
+/** PdfStatus.generatedBy of a PDF made by the stream after an edit, and of one made by a deploy. */
+export const PDF_AFTER_EDIT = 'automatic';
+export const PDF_ON_DEPLOY = 'deploy';
+
+/** What the PDF generator last wrote to the site. */
+export interface PdfStatus {
+  generatedAt: string;
+  /** The editor who asked for it, or PDF_AFTER_EDIT / PDF_ON_DEPLOY. */
+  generatedBy: string;
+  /** The book's `updatedAt` it was generated from; behind BookStatus.updatedAt once anything changes. */
+  bookUpdatedAt: string;
+  songCount: number;
+  pages: number;
+  bytes: number;
+}
+
+/** Result of POST /pdf. */
+export interface PdfResponse {
+  generated: boolean;
+  /** unchanged: the stream ran it, and the latest PDF already holds the book's latest edit. */
+  reason?: 'not-seeded' | 'unchanged';
+  pdf?: PdfStatus;
 }
 
 export interface SongListResponse {

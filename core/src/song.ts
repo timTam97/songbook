@@ -11,6 +11,10 @@ export function deriveFirstLine(sections: readonly Section[]): string {
     .replace(/[\s,;:]+$/, '');
 }
 
+/** A song's copyright as the site and the PDF print it: "Public Domain", or "© <holder>". */
+export const copyrightLine = (copyright: string | undefined): string | undefined =>
+  copyright === undefined ? undefined : copyright === 'Public Domain' ? 'Public Domain' : `© ${copyright}`;
+
 /** URL-safe slug: "There’s A Hill Lone And Gray" -> "theres-a-hill-lone-and-gray". */
 export function slugify(title: string): string {
   return title

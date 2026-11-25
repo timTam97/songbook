@@ -12,9 +12,10 @@ const cf = mockClient(CloudFrontClient);
 
 const STREAM_EVENT = { Records: [{ eventName: 'MODIFY', dynamodb: { Keys: { pk: { S: 'SONG' }, sk: { S: 'a' } } } }] };
 
-function givenTable(meta: unknown, songs: unknown[], publish?: unknown) {
+function givenTable(meta: unknown, songs: unknown[], publish?: unknown, pdf?: unknown) {
   ddb.on(GetCommand, { Key: { pk: 'BOOK', sk: 'META' } }).resolves({ Item: meta as Record<string, unknown> | undefined });
   ddb.on(GetCommand, { Key: { pk: 'BOOK', sk: 'PUBLISH' } }).resolves({ Item: publish as Record<string, unknown> | undefined });
+  ddb.on(GetCommand, { Key: { pk: 'BOOK', sk: 'PDF' } }).resolves({ Item: pdf as Record<string, unknown> | undefined });
   ddb.on(QueryCommand).resolves({ Items: songs as Record<string, unknown>[] });
 }
 
@@ -91,6 +92,17 @@ describe('publish', () => {
   it('publishes from the stream when the book changed', async () => {
     givenTable(META, [songItem('1', 'Alpha')], { pk: 'BOOK', sk: 'PUBLISH', publishedHash: 'old' });
     expect(await handler(STREAM_EVENT)).toMatchObject({ published: true });
+  });
+
+  it("carries the latest PDF's dates, so the site can say how current it is", async () => {
+    const pdf = { pk: 'BOOK', sk: 'PDF', generatedAt: '2026-10-03T00:00:00.000Z', bookUpdatedAt: '2026-10-01T00:00:00.000Z', pages: 3, hash: 'x' };
+    givenTable(META, [songItem('1', 'Alpha')], undefined, pdf);
+    await handler({});
+    expect(published().pdf).toEqual({ generatedAt: pdf.generatedAt, bookUpdatedAt: pdf.bookUpdatedAt });
+
+    givenTable(META, [songItem('1', 'Alpha')]);
+    await handler({});
+    expect(s3.commandCalls(PutObjectCommand)[1].args[0].input.Body).not.toContain('"pdf"');
   });
 
   it('produces the same bytes, and hash, for the same content', async () => {

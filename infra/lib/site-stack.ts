@@ -5,6 +5,7 @@ import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
+import { PDF_KEY } from '@songbook/core';
 import type { Construct } from 'constructs';
 import { Admin, authOrigin } from './admin.ts';
 import { SONGBOOK_KEY, SongData } from './song-data.ts';
@@ -157,6 +158,7 @@ export class SiteStack extends Stack {
       hostnames: domain?.names ?? [],
       table: this.data.table,
       publisher: this.data.publisher,
+      pdfGenerator: this.data.pdfGenerator,
       authDomain: props.authDomain,
       responseHeadersPolicy: headers,
     });
@@ -171,15 +173,17 @@ export class SiteStack extends Stack {
       cacheControl: [s3deploy.CacheControl.fromString('public, max-age=31536000, immutable')],
     });
 
-    // Everything else (index.html, the PDF, the portal's settings, ...) must pick up changes immediately.
-    // songbook.json belongs to the publisher: a site deploy never uploads or touches it.
+    // Everything else (index.html, the portal's settings, ...) must pick up changes immediately.
+    // songbook.json belongs to the publisher and the PDF to its generator: a site deploy never
+    // uploads or touches either.
+    const generated = [SONGBOOK_KEY, PDF_KEY];
     const pages = new s3deploy.BucketDeployment(this, 'DeployPages', {
       sources: [
-        s3deploy.Source.asset(props.siteDir, { exclude: ['assets', SONGBOOK_KEY] }),
+        s3deploy.Source.asset(props.siteDir, { exclude: ['assets', ...generated] }),
         s3deploy.Source.jsonData(PORTAL_CONFIG_KEY, this.admin.portalConfig),
       ],
       destinationBucket: bucket,
-      exclude: [SONGBOOK_KEY],
+      exclude: generated,
       prune: false,
       cacheControl: [s3deploy.CacheControl.fromString('public, max-age=0, must-revalidate')],
       distribution: this.distribution,
@@ -197,6 +201,7 @@ export class SiteStack extends Stack {
     new CfnOutput(this, 'TableName', { value: this.data.table.tableName });
     new CfnOutput(this, 'SeedFunctionName', { value: this.data.seeder.functionName });
     new CfnOutput(this, 'PublishFunctionName', { value: this.data.publisher.functionName });
+    new CfnOutput(this, 'PdfFunctionName', { value: this.data.pdfGenerator.functionName });
     new CfnOutput(this, 'UserPoolId', { value: this.admin.userPool.userPoolId });
     if (this.admin.authDomainTarget) {
       new CfnOutput(this, 'AuthDomainTarget', {

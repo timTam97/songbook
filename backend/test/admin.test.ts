@@ -25,7 +25,7 @@ beforeEach(() => {
   ddb.on(BatchWriteCommand).resolves({});
   ddb.on(GetCommand).resolves({});
   ddb.on(QueryCommand).resolves({ Items: [] });
-  setEnv({ TABLE_NAME: 'table', PUBLISH_FUNCTION_NAME: 'publisher' });
+  setEnv({ TABLE_NAME: 'table', PUBLISH_FUNCTION_NAME: 'publisher', PDF_FUNCTION_NAME: 'pdf-generator' });
 });
 
 interface Call {
@@ -358,5 +358,50 @@ describe('book and publish', () => {
     const res = await call('POST /api/admin/publish');
     expect(res.body.result).toEqual({ published: true, songs: 2 });
     expect(lambda.commandCalls(InvokeCommand)[0].args[0].input).toMatchObject({ FunctionName: 'publisher', InvocationType: 'RequestResponse' });
+  });
+});
+
+describe('the PDF', () => {
+  const pdf = {
+    generatedAt: '2026-10-03T00:00:00.000Z',
+    generatedBy: 'editor@example.com',
+    bookUpdatedAt: '2026-10-01T00:00:00.000Z',
+    songCount: 2,
+    pages: 5,
+    bytes: 1234,
+  };
+
+  it('generates it through the PDF function, naming the editor who asked', async () => {
+    lambda.on(InvokeCommand).resolves({ Payload: Buffer.from(JSON.stringify({ generated: true, pdf })) as never });
+    const res = await call('POST /api/admin/pdf');
+    expect(res.status).toBe(200);
+    expect(res.body.result).toEqual({ generated: true, pdf });
+    const input = lambda.commandCalls(InvokeCommand)[0].args[0].input;
+    expect(input).toMatchObject({ FunctionName: 'pdf-generator', InvocationType: 'RequestResponse' });
+    expect(JSON.parse(String(input.Payload))).toEqual({ actor: 'editor@example.com' });
+  });
+
+  it('answers 409 while another PDF is being generated, or before the book is seeded', async () => {
+    lambda.on(InvokeCommand).rejects(Object.assign(new Error('Rate exceeded'), { name: 'TooManyRequestsException' }));
+    const busy = await call('POST /api/admin/pdf');
+    expect(busy.status).toBe(409);
+    expect(busy.body.message).toMatch(/already being generated/);
+
+    lambda.on(InvokeCommand).resolves({ Payload: Buffer.from(JSON.stringify({ generated: false, reason: 'not-seeded' })) as never });
+    expect((await call('POST /api/admin/pdf')).body.error).toBe('not-seeded');
+  });
+
+  it('hides why generating failed from the browser', async () => {
+    lambda.on(InvokeCommand).resolves({ FunctionError: 'Unhandled', Payload: Buffer.from('{"errorMessage":"Refusing to publish invalid songs"}') as never });
+    const res = await call('POST /api/admin/pdf');
+    expect(res.status).toBe(500);
+    expect(res.body.message).not.toMatch(/invalid songs/);
+  });
+
+  it('reports the latest PDF with the book', async () => {
+    given({ pk: 'BOOK', sk: 'META' }, META);
+    given({ pk: 'BOOK', sk: 'PDF' }, { pk: 'BOOK', sk: 'PDF', ...pdf, hash: 'abc' });
+    const res = await call('GET /api/admin/book');
+    expect(res.body.book.pdf).toEqual(pdf);
   });
 });

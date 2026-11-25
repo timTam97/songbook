@@ -50,7 +50,8 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
-      # web/public/melbourne-songs.pdf (the printed edition) is copied into the build as-is.
+      # web/public/ (the LaTeX book's archived PDFs among it) is copied into the build as-is.
+      # The current PDF is generated from the admin portal, never by CI.
       - run: npm run build
       - name: Synth (checks only; the real domain is added at deploy)
         run: npm run synth

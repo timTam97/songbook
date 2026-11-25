@@ -5,6 +5,14 @@ import type { BookMeta, Section, Segment, Song, SongFields, Songbook } from './t
 /** Version of the published songbook.json format. The web app refuses a book it does not understand. */
 export const SCHEMA_VERSION = 1;
 
+/** Where the generated PDF lives, at the site root. The LaTeX book's PDF was served at the same URL. */
+export const PDF_KEY = 'melbourne-songs.pdf';
+
+/** "10 October 2026": a date as the site and the PDF print it, in Melbourne time. */
+export function formatBookDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Australia/Melbourne' });
+}
+
 function copySegment(seg: Segment): Segment {
   const out: Segment = { text: seg.text };
   if (seg.italic) out.italic = true;
@@ -50,6 +58,7 @@ export function buildSongbook(meta: BookMeta, songs: readonly SongFields[]): Son
   const book: Songbook = { schemaVersion: SCHEMA_VERSION, title: meta.title, songs: [] };
   if (meta.released !== undefined) book.released = meta.released;
   if (meta.updatedAt !== undefined) book.updatedAt = meta.updatedAt;
+  if (meta.pdf !== undefined) book.pdf = { generatedAt: meta.pdf.generatedAt, bookUpdatedAt: meta.pdf.bookUpdatedAt };
   book.songs = orderSongs(songs).map((song, i) => toPublicSong(song, i + 1));
   return book;
 }
