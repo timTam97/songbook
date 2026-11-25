@@ -10,9 +10,11 @@ License (`GUST-FONT-LICENSE.txt`). The PDF embeds subsets of them.
 | `lmroman12-regular.otf` | Lyrics, index, page headers |
 | `lmroman12-italic.otf`, `lmroman12-bold.otf`, `lmroman10-bolditalic.otf` | Italic, bold and bold italic lyrics; the index heading |
 | `lmroman17-regular.otf` | The title page |
-| `lmroman8-regular.otf` | Authors, page footers |
+| `lmroman8-regular.otf` | Copyright and author lines, page footers |
 | `lmsans12-regular.otf` | Song titles |
-| `lmsans8-regular.otf` | Copyright lines, chords |
+| `lmmono12-regular.otf` | Song numbers in the headings |
+| `lmsans10-regular.otf` | Verse numbers |
+| `lmsans8-regular.otf` | Chords |
 
 The PDF Lambda reads them from `fonts/` next to its bundle (see
 `backendFunction`'s `copyFiles` in `infra/lib/song-data.ts`).

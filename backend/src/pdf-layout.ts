@@ -11,7 +11,7 @@
  */
 import { copyrightLine, formatBookDate, type Line, type Section, type Song, type Songbook } from '@songbook/core';
 
-export type FontName = 'roman' | 'italic' | 'bold' | 'boldItalic' | 'display' | 'small' | 'sans' | 'sansSmall';
+export type FontName = 'roman' | 'italic' | 'bold' | 'boldItalic' | 'display' | 'small' | 'sans' | 'sansSmall' | 'marker' | 'mono';
 
 export interface Metrics {
   /** Advance width of `text` set in `font` at `size` points. */
@@ -50,10 +50,11 @@ export interface Page {
 // --- Page geometry (A4) -----------------------------------------------------------------------
 
 export const PAGE = { width: 595.28, height: 841.89 };
-const MARGIN = 40;
-const TEXT_WIDTH = PAGE.width - 2 * MARGIN;
-const COLUMN_GAP = 20;
-export const COLUMN_WIDTH = (TEXT_WIDTH - COLUMN_GAP) / 2;
+/** The LaTeX book's columns: 256pt wide, 10pt apart, the pair centred on the page. */
+export const COLUMN_WIDTH = 256;
+const COLUMN_GAP = 10;
+const TEXT_WIDTH = 2 * COLUMN_WIDTH + COLUMN_GAP;
+const MARGIN = (PAGE.width - TEXT_WIDTH) / 2;
 export const COLUMNS = [MARGIN, MARGIN + COLUMN_WIDTH + COLUMN_GAP];
 
 const HEADER_BASELINE = 44;
@@ -73,13 +74,17 @@ interface Type {
   baseline: number;
 }
 
-/** Lyrics: 12pt on 14.5pt, as the LaTeX book set them. */
+// Sizes as the LaTeX book set them.
+/** Lyrics: 12pt on 14.5pt. */
 const LYRIC: Type = { size: 12, leading: 14.5, baseline: 11 };
-const TITLE: Type = { size: 14, leading: 17, baseline: 13 };
-const COPYRIGHT: Type = { size: 7, leading: 9, baseline: 7 };
+/** Song headings: the number in typewriter at 16.94pt, then "— Title" in sans at 14.35pt. */
+const TITLE: Type = { size: 14.35, leading: 18, baseline: 14 };
+const NUMBER_SIZE = 16.94;
+/** Copyright and authors, in 8pt roman. */
 const CREDIT: Type = { size: 8, leading: 10, baseline: 8 };
 const CHORD = { size: 8, height: 9 };
-const MARKER_SIZE = 10;
+/** Verse numbers, in sans. */
+const MARKER_SIZE = 10.91;
 /** Where verse text starts, after its number. Choruses start at the column's edge. */
 export const VERSE_INDENT = 20;
 /** Extra indent of a lyric line's continuation rows when it wraps. */
@@ -253,7 +258,7 @@ function lineRows(line: Line, metrics: Metrics, textX: number, marker: string | 
     const chordHeight = pieces.some((p) => p.chord !== undefined) ? CHORD.height : 0;
     const baseline = chordHeight + LYRIC.baseline;
     const items: TextItem[] = [];
-    if (k === 0 && marker) items.push(text(VERSE_INDENT - 5 - metrics.width(marker, 'roman', MARKER_SIZE), baseline, marker, 'roman', MARKER_SIZE));
+    if (k === 0 && marker) items.push(text(VERSE_INDENT - 5 - metrics.width(marker, 'marker', MARKER_SIZE), baseline, marker, 'marker', MARKER_SIZE));
     for (const p of pieces) {
       if (p.text) items.push(text(p.x, baseline, p.text, p.font, LYRIC.size));
       if (p.chord) items.push(text(p.x, chordHeight - 1, p.chord, 'sansSmall', CHORD.size));
@@ -283,18 +288,45 @@ function centredRows(s: string, font: FontName, type: Type, metrics: Metrics): R
   }));
 }
 
+/**
+ * "N — Title", centred, broken at spaces to fit the column: the number in
+ * typewriter, the rest in sans, as one run per row so it copies as a line.
+ */
+function titleRows(song: Song, metrics: Metrics): Row[] {
+  const space = metrics.width(' ', 'sans', TITLE.size);
+  const number = { text: String(song.number), width: metrics.width(String(song.number), 'mono', NUMBER_SIZE) };
+  // The first row starts with the number and its dash; a word that would pass the column's edge starts a new row.
+  const rows: string[][] = [[]];
+  let used = number.width;
+  for (const word of `\u2014 ${song.title}`.split(/ +/).filter(Boolean)) {
+    const w = metrics.width(word, 'sans', TITLE.size);
+    if (rows.at(-1)!.length > 0 && used + space + w > COLUMN_WIDTH) {
+      rows.push([word]);
+      used = w;
+    } else {
+      rows.at(-1)!.push(word);
+      used += space + w;
+    }
+  }
+  return rows.map((words, k) => {
+    const rest = words.join(' ');
+    const lead = k === 0 ? number.width + space : 0;
+    const x = Math.max(0, (COLUMN_WIDTH - lead - metrics.width(rest, 'sans', TITLE.size)) / 2);
+    const items = [text(x + lead, TITLE.baseline, rest, 'sans', TITLE.size)];
+    if (k === 0) items.unshift(text(x, TITLE.baseline, number.text, 'mono', NUMBER_SIZE));
+    return { height: TITLE.leading, items: items.filter((i) => i.text) };
+  });
+}
+
 /** The song's number and title, then its copyright, authors, scripture and sources, centred. */
 function headingRows(song: Song, metrics: Metrics): Row[] {
-  const credits: Array<[string | undefined, FontName, Type]> = [
-    [copyrightLine(song.copyright), 'sansSmall', COPYRIGHT],
-    [song.author && `W&M: ${song.author}`, 'small', CREDIT],
-    [song.scripture, 'small', CREDIT],
-    ...song.refs.map((r): [string, FontName, Type] => [`${r.source} ${r.ref}`.trim(), 'small', CREDIT]),
+  const credits = [
+    copyrightLine(song.copyright),
+    song.author && `W&M: ${song.author}`,
+    song.scripture,
+    ...song.refs.map((r) => `${r.source} ${r.ref}`.trim()),
   ];
-  return [
-    ...centredRows(songHeading(song), 'sans', TITLE, metrics),
-    ...credits.flatMap(([s, font, type]) => (s ? centredRows(s, font, type, metrics) : [])),
-  ];
+  return [...titleRows(song, metrics), ...credits.flatMap((s) => (s ? centredRows(s, 'small', CREDIT, metrics) : []))];
 }
 
 const heightOf = (rows: Row[]) => rows.reduce((h, r) => h + r.height, 0);

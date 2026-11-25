@@ -17,6 +17,8 @@ export const FONT_FILES: Record<FontName, string> = {
   small: 'lmroman8-regular.otf',
   sans: 'lmsans12-regular.otf',
   sansSmall: 'lmsans8-regular.otf',
+  marker: 'lmsans10-regular.otf',
+  mono: 'lmmono12-regular.otf',
 };
 
 export type Fonts = Record<FontName, Buffer>;

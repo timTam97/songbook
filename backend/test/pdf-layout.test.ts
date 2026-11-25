@@ -137,7 +137,8 @@ describe('layoutBook', () => {
       expect(entry?.text, s.title).toBe(`${s.title}, ${s.number}`);
       const holding = pages.filter((p) => p.destinations.some((d) => d.name === songDestination(s.number)));
       expect(holding).toHaveLength(1);
-      expect(texts(holding[0]).some((i) => i.text === `${s.number} \u2014 ${s.title}` && i.font === 'sans')).toBe(true);
+      expect(texts(holding[0]).some((i) => i.text === String(s.number) && i.font === 'mono')).toBe(true);
+      expect(texts(holding[0]).some((i) => i.text === `\u2014 ${s.title}` && i.font === 'sans')).toBe(true);
       expect(holding[0].bookmarks).toContain(`${s.number} \u2014 ${s.title}`);
     }
   });
@@ -157,7 +158,7 @@ describe('layoutBook', () => {
   it('never splits a verse, and never leaves a heading at the foot of a column', () => {
     for (const s of big.songs) {
       const k = pad(Number(s.title.slice(5)));
-      const heading = find(pages, `${s.number} \u2014 `);
+      const heading = find(pages, `\u2014 ${s.title}`);
       const firstLine = find(pages, `s${k} v1 l1`);
       expect([firstLine.page, firstLine.column], s.title).toEqual([heading.page, heading.column]);
       for (const section of s.sections.filter((x) => x.kind === 'verse')) {
@@ -166,6 +167,33 @@ describe('layoutBook', () => {
         expect([bottom.page, bottom.column], `${s.title} verse ${section.label}`).toEqual([top.page, top.column]);
       }
     }
+  });
+
+  it('sets headings, verse numbers and credits in the LaTeX book’s fonts', () => {
+    const body = songPages.flatMap(texts).filter((i) => i.y > 60 && i.y < 800);
+    const fontsOf = (match: (i: TextItem) => boolean) => [...new Set(body.filter(match).map((i) => `${i.font} ${i.size}`))];
+    expect(fontsOf((i) => /^\d+$/.test(i.text))).toEqual(['mono 16.94']);
+    expect(fontsOf((i) => i.text.startsWith('\u2014 '))).toEqual(['sans 14.35']);
+    expect(fontsOf((i) => /^\d+\.$/.test(i.text))).toEqual(['marker 10.91']);
+    expect(fontsOf((i) => i.text === 'Public Domain' || i.text.startsWith('W&M:'))).toEqual(['small 8']);
+    // The number and its title sit on one baseline, centred together.
+    const number = body.find((i) => i.text === '1' && i.font === 'mono')!;
+    const title = body.find((i) => i.text === '\u2014 Song 001')!;
+    expect(title.y).toBe(number.y);
+    const left = COLUMNS[columnOf(number)];
+    const gapBefore = number.x - left;
+    const gapAfter = left + COLUMN_WIDTH - (title.x + width(title));
+    expect(Math.abs(gapBefore - gapAfter)).toBeLessThan(0.01);
+  });
+
+  it('wraps a long heading, keeping the number on the first row', () => {
+    const long = { ...song(1), title: `Song 001 ${'and the rest of a very long title '.repeat(3)}`.trim() };
+    const out = layoutBook(book([long]), metrics);
+    const rows = texts(out[songStart(out)]).filter((i) => i.font === 'sans' || i.font === 'mono');
+    expect(rows[0]).toMatchObject({ text: '1', font: 'mono' });
+    expect(rows.length).toBeGreaterThan(2);
+    expect(rows.slice(1).map((r) => r.text).join(' ')).toBe(`\u2014 ${long.title}`);
+    for (const r of rows) expect(r.x + width(r)).toBeLessThanOrEqual(COLUMNS[0] + COLUMN_WIDTH + 0.01);
   });
 
   it('runs the date and the title across the top, swapping sides on even pages, and links back to the index', () => {
