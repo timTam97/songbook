@@ -34,10 +34,12 @@ import {
   type PublishResponse,
   type SongFields,
   type SongListResponse,
+  type SongOrigin,
   type SongSummary,
 } from '@songbook/core';
 import type { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 import {
+  batchGet,
   doc,
   env,
   getItem,
@@ -264,17 +266,42 @@ async function saveVersion(
 
 // --- Routes ---------------------------------------------------------------------------------
 
+/** Each song's history version 1, by song id. */
+async function originsOf(songs: SongItem[]): Promise<Map<string, SongOrigin>> {
+  const firsts = await batchGet<Pick<HistoryItem, 'id' | 'action' | 'changedAt' | 'changedBy'>>(
+    songs.map((s) => keys.history(s.id, 1)),
+    ['id', 'action', 'changedAt', 'changedBy'],
+  );
+  return new Map(firsts.map((h) => [h.id, { action: h.action, at: h.changedAt, by: h.changedBy }]));
+}
+
+async function songsWithOrigins(): Promise<{ songs: SongItem[]; origins: Map<string, SongOrigin> }> {
+  const songs = await listSongs();
+  return { songs, origins: await originsOf(songs) };
+}
+
 async function listSongsRoute(): Promise<Reply> {
-  const [songs, meta, published, pdf] = await Promise.all([listSongs(), getMeta(), getItem<PublishItem>(keys.publish), getItem<PdfItem>(keys.pdf)]);
-  const rows: SongSummary[] = orderSongs(songs).map((s, k) => ({
-    id: s.id,
-    number: k + 1,
-    title: s.title,
-    slug: s.slug,
-    version: s.version,
-    updatedAt: s.updatedAt,
-    updatedBy: s.updatedBy,
-  }));
+  const [{ songs, origins }, book] = await Promise.all([songsWithOrigins(), bookStatus()]);
+  const rows: SongSummary[] = orderSongs(songs).map((s, k) => {
+    const row: SongSummary = {
+      id: s.id,
+      number: k + 1,
+      title: s.title,
+      slug: s.slug,
+      version: s.version,
+      updatedAt: s.updatedAt,
+      updatedBy: s.updatedBy,
+    };
+    const created = origins.get(s.id);
+    if (created) row.created = created;
+    return row;
+  });
+  const body: SongListResponse = { songs: rows, book };
+  return { body };
+}
+
+async function bookStatus(): Promise<BookStatus> {
+  const [meta, published, pdf] = await Promise.all([getMeta(), getItem<PublishItem>(keys.publish), getItem<PdfItem>(keys.pdf)]);
   const book: BookStatus = { title: meta?.title ?? '', updatedAt: meta?.updatedAt ?? '' };
   if (meta?.seededFrom) book.seededFrom = meta.seededFrom;
   if (published) {
@@ -283,8 +310,7 @@ async function listSongsRoute(): Promise<Reply> {
     book.publishedSongCount = published.songCount;
   }
   if (pdf) book.pdf = toPdfStatus(pdf);
-  const body: SongListResponse = { songs: rows, book };
-  return { body };
+  return book;
 }
 
 async function getSongRoute(req: Request): Promise<Reply> {
@@ -439,7 +465,7 @@ async function revertRoute(req: Request): Promise<Reply> {
 }
 
 async function getBookRoute(): Promise<Reply> {
-  return listSongsRoute().then((r) => ({ body: { book: (r.body as SongListResponse).book } }));
+  return { body: { book: await bookStatus() } };
 }
 
 async function putBookRoute(req: Request): Promise<Reply> {

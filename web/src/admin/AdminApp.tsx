@@ -11,6 +11,7 @@ import { BookSettings } from './BookSettings.tsx';
 import { DeletedList } from './DeletedList.tsx';
 import { Editor } from './Editor.tsx';
 import { History } from './History.tsx';
+import { RecentlyCreated, RecentlyEdited } from './Recent.tsx';
 import { SongList } from './SongList.tsx';
 import { Alert, button, messageOf } from './ui.tsx';
 
@@ -69,8 +70,18 @@ function SignedOut() {
   );
 }
 
+/** The full label where the tabs have room, the short one where they don't. */
+function TabLabel({ short, full }: { short: string; full: string }) {
+  return (
+    <>
+      <span className="xl:hidden">{short}</span>
+      <span className="max-xl:hidden">{full}</span>
+    </>
+  );
+}
+
 const navLink = ({ isActive }: { isActive: boolean }) =>
-  `rounded-md px-2.5 py-1.5 text-sm font-medium ${isActive ? 'bg-stone-200 text-stone-950 dark:bg-stone-800 dark:text-stone-50' : 'text-stone-600 hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-50'}`;
+  `shrink-0 rounded-md px-1.5 py-1.5 text-sm font-medium whitespace-nowrap min-[360px]:px-2 sm:px-2.5 ${isActive ? 'bg-stone-200 text-stone-950 dark:bg-stone-800 dark:text-stone-50' : 'text-stone-600 hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-50'}`;
 
 function Shell({ user }: { user: User }) {
   return (
@@ -81,13 +92,19 @@ function Shell({ user }: { user: User }) {
             Songbook admin
           </Link>
           {BETA && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 uppercase dark:bg-amber-900/60 dark:text-amber-100">Beta</span>}
-          {/* On phones the tabs drop to a row of their own under the title and account links. */}
-          <nav aria-label="Admin" className="order-last -ml-2.5 flex w-full items-center gap-1 sm:order-none sm:ml-0 sm:w-auto">
+          {/* Below 768px the tabs drop to a row of their own under the title and account links. */}
+          <nav aria-label="Admin" className="order-last -ml-1.5 flex w-full items-center overflow-x-auto min-[360px]:-ml-2 min-[360px]:gap-0.5 sm:gap-1 md:order-none md:ml-0 md:w-auto">
             <NavLink to="/admin" end className={navLink}>
               Songs
             </NavLink>
+            <NavLink to="/admin/edited" className={navLink}>
+              <TabLabel short="Edited" full="Recently edited" />
+            </NavLink>
+            <NavLink to="/admin/created" className={navLink}>
+              <TabLabel short="Created" full="Recently created" />
+            </NavLink>
             <NavLink to="/admin/deleted" className={navLink}>
-              Recently deleted
+              <TabLabel short="Deleted" full="Recently deleted" />
             </NavLink>
             <NavLink to="/admin/book" className={navLink}>
               Book
@@ -111,6 +128,8 @@ function Shell({ user }: { user: User }) {
           <Route path="songs/new" element={<Editor />} />
           <Route path="songs/:id" element={<Editor />} />
           <Route path="songs/:id/history" element={<History />} />
+          <Route path="edited" element={<RecentlyEdited />} />
+          <Route path="created" element={<RecentlyCreated />} />
           <Route path="deleted" element={<DeletedList />} />
           <Route path="book" element={<BookSettings />} />
           <Route path="*" element={<p>No such admin page. <Link to="/admin" className={button.link}>Back to the songs</Link></p>} />

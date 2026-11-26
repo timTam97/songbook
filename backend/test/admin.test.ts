@@ -1,6 +1,7 @@
 import { TransactionCanceledException } from '@aws-sdk/client-dynamodb';
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import {
+  BatchGetCommand,
   BatchWriteCommand,
   DynamoDBDocumentClient,
   GetCommand,
@@ -23,6 +24,7 @@ beforeEach(() => {
   lambda.reset();
   ddb.on(TransactWriteCommand).resolves({});
   ddb.on(BatchWriteCommand).resolves({});
+  ddb.on(BatchGetCommand).resolves({ Responses: {} });
   ddb.on(GetCommand).resolves({});
   ddb.on(QueryCommand).resolves({ Items: [] });
   setEnv({ TABLE_NAME: 'table', PUBLISH_FUNCTION_NAME: 'publisher', PDF_FUNCTION_NAME: 'pdf-generator' });
@@ -112,6 +114,56 @@ describe('GET /songs', () => {
       publishedBookUpdatedAt: META.updatedAt,
       publishedSongCount: 2,
     });
+  });
+
+  it("gives each song its history's first version, read consistently in one batch", async () => {
+    ddb.on(QueryCommand).resolves({ Items: [songItem('b', 'Bravo', 3), songItem('a', 'Alpha'), songItem('c', 'Charlie')] });
+    ddb.on(BatchGetCommand).resolves({
+      Responses: {
+        table: [
+          { id: 'a', action: 'create', changedAt: '2026-11-20T00:00:00.000Z', changedBy: 'editor@example.com' },
+          { id: 'b', action: 'import', changedAt: '2026-10-01T00:00:00.000Z', changedBy: 'seed' },
+        ],
+      },
+    });
+    const res = await call('GET /api/admin/songs');
+    expect(res.body.songs.map((s: { id: string; created?: unknown }) => [s.id, s.created])).toEqual([
+      ['a', { action: 'create', at: '2026-11-20T00:00:00.000Z', by: 'editor@example.com' }],
+      ['b', { action: 'import', at: '2026-10-01T00:00:00.000Z', by: 'seed' }],
+      ['c', undefined],
+    ]);
+
+    const [batch] = ddb.commandCalls(BatchGetCommand);
+    const request = batch.args[0].input.RequestItems!.table;
+    expect(request.Keys).toEqual([
+      { pk: 'HIST#b', sk: 'v000001' },
+      { pk: 'HIST#a', sk: 'v000001' },
+      { pk: 'HIST#c', sk: 'v000001' },
+    ]);
+    expect(request.ConsistentRead).toBe(true);
+    expect(Object.values(request.ExpressionAttributeNames!)).toEqual(['id', 'action', 'changedAt', 'changedBy']);
+  });
+
+  it('reads more than 100 songs in batches, retrying unprocessed keys', async () => {
+    ddb.on(QueryCommand).resolves({ Items: Array.from({ length: 150 }, (_, k) => songItem(`s${k}`, `Song ${k}`)) });
+    const first = (id: string) => ({ id, action: 'import', changedAt: '2026-10-01T00:00:00.000Z', changedBy: 'seed' });
+    ddb
+      .on(BatchGetCommand)
+      .resolvesOnce({ Responses: { table: [first('s0')] }, UnprocessedKeys: { table: { Keys: [{ pk: 'HIST#s1', sk: 'v000001' }] } } })
+      .resolvesOnce({ Responses: { table: [first('s1')] } })
+      .resolvesOnce({ Responses: { table: [first('s100')] } });
+    const res = await call('GET /api/admin/songs');
+    const calls = ddb.commandCalls(BatchGetCommand).map((c) => c.args[0].input.RequestItems!.table.Keys!.length);
+    expect(calls).toEqual([100, 1, 50]);
+    expect(res.body.songs.filter((s: { created?: unknown }) => s.created).map((s: { id: string }) => s.id).sort()).toEqual(['s0', 's1', 's100']);
+  });
+
+  it('GET /book reports the book without reading the songs', async () => {
+    given({ pk: 'BOOK', sk: 'META' }, META);
+    const res = await call('GET /api/admin/book');
+    expect(res.body.book).toEqual({ title: 'Test Songs', updatedAt: META.updatedAt });
+    expect(ddb.commandCalls(QueryCommand)).toHaveLength(0);
+    expect(ddb.commandCalls(BatchGetCommand)).toHaveLength(0);
   });
 });
 

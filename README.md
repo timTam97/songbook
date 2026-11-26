@@ -235,6 +235,12 @@ replaces whatever is live with what the code says.
   working when numbers change, so change it only if you must.
 - **History:** every saved version, how it differs from the current one, and
   Revert (which saves the old content as a new version).
+- **Recently edited:** songs saved since they were added, latest save first
+  (up to 50), with who saved them and a link to each one's history.
+- **Recently created:** songs added in the portal, and deleted songs that
+  were restored, newest first (up to 50). Songs imported with the book are
+  left out. Both tabs read when a song was added from version 1 of its
+  history.
 - **Recently deleted:** deleted songs can be restored for 30 days. After
   that, point-in-time recovery (35 days) is the way back.
 - **Book:** the book's title, and the PDF: its address, when it was last

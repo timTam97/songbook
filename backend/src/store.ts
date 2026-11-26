@@ -12,7 +12,7 @@
  *   SLUG     / <slug>       reservation, so two songs can never share a slug
  */
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, paginateQuery } from '@aws-sdk/lib-dynamodb';
+import { BatchGetCommand, DynamoDBDocumentClient, GetCommand, paginateQuery } from '@aws-sdk/lib-dynamodb';
 import { validateSong, type SongFields } from '@songbook/core';
 
 export const doc = DynamoDBDocumentClient.from(new DynamoDBClient({}), {
@@ -132,6 +132,30 @@ export async function queryPartition<T>(pk: string, options: { consistent?: bool
     },
   );
   for await (const page of pages) items.push(...((page.Items ?? []) as T[]));
+  return items;
+}
+
+/** The items at `keyList` that exist (in no particular order), with just the `attributes` named. */
+export async function batchGet<T>(keyList: Key[], attributes: string[]): Promise<T[]> {
+  const table = tableName();
+  const names = Object.fromEntries(attributes.map((a, k) => [`#a${k}`, a]));
+  const items: T[] = [];
+  for (let i = 0; i < keyList.length; i += 100) {
+    let pending: Key[] = keyList.slice(i, i + 100);
+    for (let attempt = 0; pending.length > 0; attempt++) {
+      if (attempt > 8) throw new Error('DynamoDB kept returning unprocessed reads');
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 50 * 2 ** attempt));
+      const out = await doc.send(
+        new BatchGetCommand({
+          RequestItems: {
+            [table]: { Keys: pending, ProjectionExpression: Object.keys(names).join(', '), ExpressionAttributeNames: names, ConsistentRead: true },
+          },
+        }),
+      );
+      items.push(...((out.Responses?.[table] ?? []) as T[]));
+      pending = (out.UnprocessedKeys?.[table]?.Keys ?? []) as Key[];
+    }
+  }
   return items;
 }
 

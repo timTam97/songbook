@@ -161,7 +161,7 @@ export class Admin extends Construct {
     });
     this.handler.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ['GetItem', 'Query', 'PutItem', 'UpdateItem', 'DeleteItem', 'ConditionCheckItem', 'BatchWriteItem'].map((a) => `dynamodb:${a}`),
+        actions: ['GetItem', 'BatchGetItem', 'Query', 'PutItem', 'UpdateItem', 'DeleteItem', 'ConditionCheckItem', 'BatchWriteItem'].map((a) => `dynamodb:${a}`),
         resources: [table.tableArn],
       }),
     );
