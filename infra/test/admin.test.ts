@@ -111,7 +111,9 @@ describe('the admin API', () => {
     const policies = Object.values(beta.findResources('AWS::IAM::Policy')).filter((p) => p.Properties.PolicyName.startsWith('AdminHandler'));
     const statements = policies.flatMap((p) => p.Properties.PolicyDocument.Statement as Array<{ Action: string | string[]; Resource: unknown }>);
     const actions = statements.flatMap((s) => [s.Action].flat());
-    expect(actions).toEqual(expect.arrayContaining(['dynamodb:GetItem', 'dynamodb:Query', 'dynamodb:PutItem', 'dynamodb:DeleteItem', 'lambda:InvokeFunction']));
+    expect(actions).toEqual(
+      expect.arrayContaining(['dynamodb:GetItem', 'dynamodb:BatchGetItem', 'dynamodb:Query', 'dynamodb:PutItem', 'dynamodb:DeleteItem', 'lambda:InvokeFunction']),
+    );
     expect(actions).not.toContain('dynamodb:Scan');
     expect(actions).not.toContain('s3:PutObject');
     const invoked = JSON.stringify(statements.filter((s) => [s.Action].flat().includes('lambda:InvokeFunction')).map((s) => s.Resource));

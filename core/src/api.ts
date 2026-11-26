@@ -42,6 +42,15 @@ export interface SongSummary {
   version: number;
   updatedAt: string;
   updatedBy: string;
+  /** Version 1 of the song's history: how and when it came into the book. Absent if that version is missing. */
+  created?: SongOrigin;
+}
+
+export interface SongOrigin {
+  /** import: from the seed. create: added in the portal. restore: brought back after a delete. */
+  action: HistoryAction;
+  at: string;
+  by: string;
 }
 
 /** A song as the editor loads and saves it. */
